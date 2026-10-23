@@ -424,9 +424,10 @@ h3.sub{font-family:var(--f-display);font-size:1.1rem;margin:28px 0 10px}
         <button class="btn askbtn" id="sAsk">问 AI：这句为什么这样说？</button>
       </div>
       <div class="actions">
+        <button class="btn" id="prevBtn" disabled>← 上一个</button>
         <button class="btn primary" id="checkBtn">检查</button>
         <button class="btn" id="hintBtn">提示一个字母</button>
-        <button class="btn ghost" id="skipBtn">跳过</button>
+        <button class="btn" id="skipBtn">下一个 →</button>
         <div class="keys"><span><kbd>Enter</kbd> 检查 / 下一个</span><span><kbd>Esc</kbd> 重听</span><span><kbd>Tab</kbd> 提示</span></div>
       </div>
     </div>
@@ -488,6 +489,7 @@ h3.sub{font-family:var(--f-display);font-size:1.1rem;margin:28px 0 10px}
       <div class="sentence" id="cSentence"></div>
       <div class="feedback" id="cFeedback" aria-live="polite"></div>
       <div class="actions">
+        <button class="btn" id="cPrev" disabled>← 上一题</button>
         <button class="btn primary" id="cCheck">检查</button>
         <button class="btn" id="cReveal">看答案</button>
         <button class="btn askbtn" id="cAsk" hidden>问 AI</button>
@@ -2513,7 +2515,8 @@ function pool(src){
   if(src==="mine")return all.filter(isMine);
   return all.filter(i=>wrong[i.id]);
 }
-function buildQueue(){queue=shuffle(pool(settings.src).map(i=>i.id))}
+let history=[];
+function buildQueue(){queue=shuffle(pool(settings.src).map(i=>i.id));history=[]}
 const srcBtns=[...document.querySelectorAll("#srcSeg .chip")];
 srcBtns.forEach(c=>c.onclick=()=>{settings.src=c.dataset.src;saveSettings();srcBtns.forEach(b=>b.setAttribute("aria-pressed",b===c));buildQueue();next()});
 srcBtns.forEach(b=>b.setAttribute("aria-pressed",b.dataset.src===settings.src));
@@ -2539,11 +2542,26 @@ function next(){
     buildQueue();if(cur)toast("新一轮开始");
   }
   cur=byId(queue.shift());if(!cur){next();return}
+  history.push(cur.id);if(history.length>200)history.shift();
+  $("prevBtn").disabled=history.length<2;
   target=normalize(cur.en);mode="type";hintMask=new Set();missedThis=false;
   $("typer").value="";$("checkBtn").textContent="检查";
   renderMeaning();renderSlots();updateScore();
   if(curTab==="practice")setTimeout(()=>speak(cur.en),150);
   focusTyper();
+}
+// go back one word: show it with the answer, re-typing is practice only (no score, no wrong-book entry)
+function prev(){
+  if(history.length<2)return;
+  queue.unshift(history.pop());           // the word we leave comes up again on 下一个
+  cur=byId(history[history.length-1]);if(!cur)return;
+  $("prevBtn").disabled=history.length<2;
+  target=normalize(cur.en);mode="reveal-retype";hintMask=new Set();missedThis=true;
+  $("typer").value="";$("checkBtn").textContent="检查";
+  $("typebox").classList.remove("good","badx");
+  renderMeaning();renderSlots();updateScore();showAnswer();
+  $("feedback").textContent="回看上一个：可以照着再打一遍，这次不计分。";$("feedback").className="feedback";
+  speak(cur.en);focusTyper();
 }
 function typedTarget(){return [...target].filter(isTyped).join("")}
 function renderSlots(){
@@ -2624,6 +2642,7 @@ function showAnswer(){$("ansText").textContent=cur.en;$("ansEx").innerHTML=cur.e
 $("checkBtn").onclick=()=>{check();focusTyper()};
 $("hintBtn").onclick=hint;
 $("skipBtn").onclick=()=>next();
+$("prevBtn").onclick=()=>prev();
 $("playBtn").onclick=()=>{cur&&speak(cur.en);focusTyper()};
 $("slowBtn").onclick=()=>{cur&&speak(cur.en,true);focusTyper()};
 function updateScore(){
@@ -2840,7 +2859,7 @@ function clozePool(){
 }
 function clozeStart(){
   const p=shuffle(clozePool()).slice(0,10).map(makeCloze).filter(Boolean);
-  Object.assign(cz,{q:p,i:0,ok:0,res:[],state:"ask"});
+  Object.assign(cz,{q:p,i:0,ok:0,res:[],fin:[],state:"ask"});
   $("cTot").textContent=p.length||0;
   if(!p.length){
     $("cSentence").innerHTML=`<span class="zhhint">${{mine:"「我加的」里还没有带例句的词。",fav:"收藏里还没有带例句的词。点单词旁边的星标就能收藏。",wrong:"错题本里没有可以出填空题的词，干得好！"}[settings.clozeSrc]||"没有可用的题目。"}</span>`;
@@ -2872,6 +2891,17 @@ function clozeShow(){
   $("cSentence").dataset.ctx=c.text;
   clozeHint();
   $("cFeedback").textContent="";$("cFeedback").className="feedback";$("cCheck").textContent="检查";
+  $("cPrev").disabled=cz.i===0;
+  if(cz.fin[cz.i]){
+    // already answered: show it as it ended
+    const inp=$("cIn");inp.value=c.pick.core;inp.readOnly=true;inp.classList.add(cz.res[cz.i]?"ok":"no");
+    cz.state="done";clozeRevealHints();
+    $("cFeedback").textContent=cz.res[cz.i]?"这题你答对了。":"这题答错过，答案已填好。";$("cFeedback").className="feedback "+(cz.res[cz.i]?"ok":"no");
+    $("cCheck").textContent=cz.i<cz.q.length-1?"下一题":"看结果";
+    $("cIn").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();clozeCheck()}if(e.key==="Escape"){e.preventDefault();speak(c.text)}});
+    speak(c.text);setTimeout(()=>{try{$("cCheck").focus({preventScroll:true})}catch(e){}},50);
+    return;
+  }
   $("cIn").addEventListener("input",e=>e.target.classList.remove("no","badx"));
   $("cIn").addEventListener("keydown",e=>{
     if(e.isComposing||e.keyCode===229)return;
@@ -2883,6 +2913,7 @@ function clozeShow(){
 function clozeCheck(reveal){
   const c=cz.cur;if(!c)return;
   if(cz.state==="done"){
+    cz.fin[cz.i]=true;
     if(cz.i<cz.q.length-1){cz.i++;clozeShow()}
     else clozeEnd();
     return;
@@ -2919,12 +2950,13 @@ function clozeCheck(reveal){
   inp.select();
 }
 function clozeEnd(){
-  cz.cur=null;$("cStar").innerHTML="";$("cAsk").hidden=true;
+  cz.cur=null;$("cPrev").disabled=true;$("cStar").innerHTML="";$("cAsk").hidden=true;
   $("cHint").textContent="";$("cFeedback").textContent="";
   $("cSentence").innerHTML=`<div class="ov" style="justify-items:start;text-align:left"><h3 style="font-family:var(--f-display);margin:0">这一轮答对 ${cz.ok} / ${cz.q.length}</h3><button class="btn primary" id="cAgain">再来一轮</button></div>`;
   $("cAgain").onclick=clozeStart;$("cCheck").textContent="再来一轮";cz.state="end";
 }
 $("cCheck").onclick=()=>{if(cz.state==="end")clozeStart();else clozeCheck()};
+$("cPrev").onclick=()=>{if(cz.cur&&cz.i>0){if(cz.state==="done")cz.fin[cz.i]=true;cz.i--;clozeShow()}};
 $("cReveal").onclick=()=>{if(cz.state==="ask"||cz.state==="retype")clozeCheck(true)};
 $("cPlay").onclick=()=>cz.cur&&speak(cz.cur.text);
 $("cSlow").onclick=()=>cz.cur&&speak(cz.cur.text,true);
