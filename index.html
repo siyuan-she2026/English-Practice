@@ -25,6 +25,7 @@
   --ok-soft:#dff3e6;
   --bad:#c23b2e;
   --bad-soft:#fbe3df;
+  --star:#e09a00;
   --c-s:#2862b0;--c-v:#c43a2e;--c-o:#1f8a4c;--c-c:#8445b8;--c-a:#a8680f;--c-k:#0f7a80;--c-x:#7b8a95;
   --f-display:"Bricolage Grotesque","Noto Sans SC",system-ui,sans-serif;
   --f-body:"Atkinson Hyperlegible","Noto Sans SC",system-ui,sans-serif;
@@ -35,11 +36,13 @@
   --bg:#0e171d;--surface:#16222a;--ink:#e4edf2;--muted:#94a6b2;--line:#2a3a45;
   --accent:#4fc1c0;--accent-ink:#06282a;--accent-soft:#163a3d;--mark:#7a6a12;--flame:#ff9a52;
   --ok:#5fd394;--ok-soft:#173a28;--bad:#ff8577;--bad-soft:#41201c;
+  --star:#ffc53d;
   --c-s:#7fb0ff;--c-v:#ff8a7d;--c-o:#6fd99a;--c-c:#c99bf0;--c-a:#f0b85a;--c-k:#5fd0d3;--c-x:#93a3ae;color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0e171d;--surface:#16222a;--ink:#e4edf2;--muted:#94a6b2;--line:#2a3a45;
   --accent:#4fc1c0;--accent-ink:#06282a;--accent-soft:#163a3d;--mark:#7a6a12;--flame:#ff9a52;
   --ok:#5fd394;--ok-soft:#173a28;--bad:#ff8577;--bad-soft:#41201c;
+  --star:#ffc53d;
   --c-s:#7fb0ff;--c-v:#ff8a7d;--c-o:#6fd99a;--c-c:#c99bf0;--c-a:#f0b85a;--c-k:#5fd0d3;--c-x:#93a3ae;color-scheme:dark}
 
 *{box-sizing:border-box}
@@ -284,11 +287,20 @@ h3.sub{font-family:var(--f-display);font-size:1.1rem;margin:28px 0 10px}
 .legend span{display:inline-flex;align-items:center;gap:5px}
 .legend i{display:inline-block;width:16px;height:0;border-bottom:3px solid var(--rc)}
 .legend .r-P i{border-bottom-style:dashed}
-.star{flex:none;width:34px;height:34px;border-radius:50%;border:0;background:transparent;color:var(--muted);display:inline-grid;place-items:center}
-.star svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round}
-.star.on{color:var(--flame)}
+.star{flex:none;min-width:38px;height:38px;border-radius:999px;border:0;background:transparent;color:var(--muted);display:inline-flex;align-items:center;justify-content:center;gap:5px;font-weight:700;font-size:.88rem}
+.star svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linejoin:round;transition:transform .15s}
+.star.on{color:var(--star)}
 .star.on svg{fill:currentColor}
 .star:hover{background:var(--accent-soft)}
+.star.pop svg{animation:starpop .35s}
+@keyframes starpop{40%{transform:scale(1.45)}100%{transform:scale(1)}}
+.star.labeled{border:1px solid var(--line);padding:0 12px 0 8px;height:34px}
+.star.labeled.on{border-color:var(--star)}
+.tabcount{display:inline-block;min-width:1.4em;margin-left:5px;padding:0 5px;border-radius:999px;background:var(--bad);color:#fff;font-size:.72rem;line-height:1.5;text-align:center;font-family:var(--f-mono)}
+.wrongbar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;margin-bottom:14px}
+.wstat{font-size:1rem;color:var(--muted)}
+.wstat b{font-size:1.5rem;color:var(--bad);margin-right:2px}
+@media (prefers-reduced-motion:reduce){.star.pop svg{animation:none}}
 .exbody{min-width:0;display:grid;gap:2px}
 .exzh{font-style:normal;font-size:.88rem;color:var(--muted);font-family:"Noto Sans SC",var(--f-body)}
 .peeks{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
@@ -319,7 +331,7 @@ h3.sub{font-family:var(--f-display);font-size:1.1rem;margin:28px 0 10px}
       <button role="tab" data-tab="cloze" aria-selected="false">听句填空</button>
       <button role="tab" data-tab="talk" aria-selected="false">情景对话</button>
       <button role="tab" data-tab="library" aria-selected="false">词库</button>
-      <button role="tab" data-tab="mine" aria-selected="false">添加</button>
+      <button role="tab" data-tab="wrong" aria-selected="false">错题本<span class="tabcount" id="wrongCount" hidden></span></button>
     </nav>
   </div>
 </header>
@@ -439,6 +451,7 @@ h3.sub{font-family:var(--f-display);font-size:1.1rem;margin:28px 0 10px}
           <button class="chip" data-v="today">今日</button>
           <button class="chip" data-v="review">已学复习</button>
           <button class="chip" data-v="fav">收藏</button>
+          <button class="chip" data-v="wrong">错题本</button>
           <button class="chip" data-v="mine">我加的</button>
         </div>
         <div class="score"><span>第 <b id="cIdx">1</b>/<b id="cTot">10</b> 题</span><span>答对 <b id="cOk">0</b></span></div>
@@ -499,6 +512,21 @@ h3.sub{font-family:var(--f-display);font-size:1.1rem;margin:28px 0 10px}
   </section>
 
   <!-- ADD -->
+  <section id="tab-wrong" hidden>
+    <h2>错题本</h2>
+    <p class="lede">拼写拼错、单词雨漏掉、听句填空答错的词都会自动来到这里，错得越多排得越靠前。在错题练习里答对一次，错误次数减 1，减到 0 就会自动移出。</p>
+    <div class="wrongbar" id="wrongBar">
+      <span class="wstat"><b class="num" id="wTotal">0</b> 个待复习</span>
+      <div class="actions">
+        <button class="btn primary" data-go="practice">拼写练错题</button>
+        <button class="btn" data-go="rain">单词雨练错题</button>
+        <button class="btn" data-go="cloze">听句填空练错题</button>
+      </div>
+    </div>
+    <div class="list" id="listWrong"></div>
+    <div class="actions" style="margin-top:14px"><button class="btn ghost" id="clearWrong">清空错题本</button></div>
+  </section>
+
   <section id="tab-mine" hidden>
     <h2>添加自己的词</h2>
     <p class="lede">加进来的单词和短语会出现在词库里，所有玩法都能选「我加的」来练。内容保存在这台设备的浏览器里。</p>
@@ -2159,21 +2187,25 @@ let settings=Object.assign({accent:"en-GB",rate:0.9,showZh:true,src:"today",goal
 // settings saved by the earlier version used different source names
 if(!["today","todayP","review","fav","mine","wrong"].includes(settings.src))settings.src="today";
 if(!["today","review","fav","mine","wrong"].includes(settings.rainSrc))settings.rainSrc="today";
-if(!["today","review","fav","mine"].includes(settings.clozeSrc))settings.clozeSrc="today";
+if(!["today","review","fav","wrong","mine"].includes(settings.clozeSrc))settings.clozeSrc="today";
 if(settings.v!==2){settings.v=2;settings.goal=70}
 const saveSettings=()=>store.set("vb.settings",settings);
 let stats=store.get("vb.stats",{date:today,done:0,ok:0});
 if(stats.date!==today)stats={date:today,done:0,ok:0};
-const saveWrong=()=>store.set("vb.wrong",wrong);
+const saveWrong=()=>{store.set("vb.wrong",wrong);updWrongCount();if(typeof curTab!=="undefined"&&curTab==="wrong")renderWrong()};
 let fav=store.get("vb.fav",{});
 const isFav=id=>!!fav[id];
 const STAR='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg>';
-const starBtn=id=>id?`<button class="star${isFav(id)?" on":""}" data-fav="${id}" aria-pressed="${isFav(id)}" aria-label="收藏" title="${isFav(id)?"取消收藏":"收藏"}">${STAR}</button>`:"";
+const starBtn=(id,labeled)=>id?`<button class="star${labeled?" labeled":""}${isFav(id)?" on":""}" data-fav="${id}" aria-pressed="${isFav(id)}" aria-label="收藏" title="${isFav(id)?"取消收藏":"收藏"}">${STAR}${labeled?`<span class="sl">${isFav(id)?"已收藏":"收藏"}</span>`:""}</button>`:"";
 function toggleFav(id,force){
   const on=force===undefined?!fav[id]:force;
   if(on)fav[id]=Date.now();else delete fav[id];
   store.set("vb.fav",fav);
-  document.querySelectorAll('[data-fav="'+id+'"]').forEach(b=>{b.classList.toggle("on",on);b.setAttribute("aria-pressed",on);b.title=on?"取消收藏":"收藏"});
+  document.querySelectorAll('[data-fav="'+id+'"]').forEach(b=>{
+    b.classList.toggle("on",on);b.setAttribute("aria-pressed",on);b.title=on?"取消收藏":"收藏";
+    const l=b.querySelector(".sl");if(l)l.textContent=on?"已收藏":"收藏";
+    b.classList.remove("pop");if(on){void b.offsetWidth;b.classList.add("pop")}
+  });
   return on;
 }
 
@@ -2283,7 +2315,7 @@ $("goalSel").onchange=e=>{settings.goal=+e.target.value;saveSettings();renderPro
 $("pBadgesBtn").onclick=()=>{const p=$("badgePanel");p.hidden=!p.hidden;$("pBadgesBtn").setAttribute("aria-expanded",!p.hidden);renderProgress()};
 
 /* ================= tabs ================= */
-const TABS=["practice","rain","cloze","talk","library","mine"];
+const TABS=["practice","rain","cloze","talk","library","wrong","mine"];
 const tabBtns=[...document.querySelectorAll("nav.tabs button")];
 let curTab="practice";
 function showTab(name){
@@ -2297,6 +2329,7 @@ function showTab(name){
   if(name==="talk")renderScenes();
   if(name==="library")renderLib();
   if(name==="mine")renderMine();
+  if(name==="wrong")renderWrong();
 }
 tabBtns.forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
 
@@ -2340,6 +2373,7 @@ function rowHTML(it,opts){
       ${wc?`<span class="badge">错 ${wc} 次</span>`:""}
       ${isMine(it)?`<span class="badge mine">我加的</span>`:""}
       ${opts&&opts.del?`<button class="del" data-del="${it.id}">删除</button>`:""}
+      ${opts&&opts.unwrong?`<button class="del" data-unwrong="${it.id}">移出</button>`:""}
     </div></div>`;
 }
 const match=(it,q)=>!q||it.en.toLowerCase().includes(q)||it.zh.includes(q);
@@ -2382,6 +2416,8 @@ function renderMine(){
 document.addEventListener("click",e=>{
   const fb=e.target.closest("[data-fav]");
   if(fb){const on=toggleFav(fb.dataset.fav);toast(on?"已收藏":"已取消收藏");if(curTab==="library"&&settings.lib==="fav"&&!on)renderLib();return}
+  const uw=e.target.closest("[data-unwrong]");
+  if(uw){delete wrong[uw.dataset.unwrong];saveWrong();renderWrong();toast("已移出错题本");return}
   const lw=e.target.closest(".lw");
   if(lw){e.preventDefault();const c=lw.closest("[data-ctx]");lookup(lw.textContent,c?c.dataset.ctx:"");return}
   if(!$("dict").hidden&&!e.target.closest("#dict")&&!e.target.closest("#lookForm"))closeDict();
@@ -2441,7 +2477,7 @@ srcBtns.forEach(b=>b.setAttribute("aria-pressed",b.dataset.src===settings.src));
 $("showZh").checked=settings.showZh;
 $("showZh").onchange=e=>{settings.showZh=e.target.checked;saveSettings();renderMeaning();focusTyper()};
 function renderMeaning(){
-  $("sStar").innerHTML=cur?starBtn(cur.id):"";
+  $("sStar").innerHTML=cur?starBtn(cur.id,true):"";
   if(!cur){$("meaning").innerHTML="";return}
   $("meaning").innerHTML=settings.showZh
     ?`<div class="zh">${esc(cur.zh)}</div><div class="pos">${cur.type==="word"?esc(cur.tag||"单词"):"短语 · "+esc(cur.tag||"")}</div>`
@@ -2453,7 +2489,7 @@ function next(){
   if(!queue.length){
     if(!pool(settings.src).length){
       cur=null;
-      const msg={wrong:"错题本是空的，干得好！",mine:"还没有自己加的词，去「添加」页加几个吧。",fav:"还没有收藏。点单词旁边的星标就能收藏。"}[settings.src]||"没有可练的内容。";
+      const msg={wrong:"错题本是空的，干得好！",mine:"还没有自己加的词。查词时点「加入我的词库」就会出现在这里。",fav:"还没有收藏。点单词旁边的星标就能收藏。"}[settings.src]||"没有可练的内容。";
       $("slots").innerHTML=`<span style="font-family:var(--f-body);font-size:1rem;font-weight:400;color:var(--muted)">${msg}</span>`;
       renderMeaning();updateScore();return;
     }
@@ -2575,7 +2611,7 @@ function rainShowIdle(){
   if(rain.running){if(rain.paused)return;return}
   const n=rainPool().length;
   hud();
-  if(!n){overlay(`<div class="ov"><h3>单词雨</h3><p>${{wrong:"错题本是空的，换个词源吧。",fav:"还没有收藏的词。点单词旁边的星标就能收藏。"}[settings.rainSrc]||"「我加的」里还没有词，先去「添加」页加几个。"}</p></div>`);return}
+  if(!n){overlay(`<div class="ov"><h3>单词雨</h3><p>${{wrong:"错题本是空的，换个词源吧。",fav:"还没有收藏的词。点单词旁边的星标就能收藏。"}[settings.rainSrc]||"「我加的」里还没有词。查词时点「加入我的词库」就能加进来。"}</p></div>`);return}
   overlay(`<div class="ov"><h3>单词雨</h3>
     <p>${settings.rainShow==="zh"?"中文":"单词"}会从上面往下掉，在下方输入框打出${settings.rainShow==="zh"?"对应的英文":"这个词"}就能消掉。漏掉 3 个游戏结束，越往后掉得越快。</p>
     <p>漏掉的词会自动进错题本。</p>
@@ -2752,21 +2788,21 @@ function makeCloze(item){
 function clozePool(){
   const all=allItems();
   const s=settings.clozeSrc;
-  return all.filter(i=>(i.type==="phrase"||i.ex)&&((s==="today"&&inToday(i))||(s==="review"&&learned(i))||(s==="fav"&&isFav(i.id))||(s==="mine"&&isMine(i))));
+  return all.filter(i=>(i.type==="phrase"||i.ex)&&((s==="today"&&inToday(i))||(s==="review"&&learned(i))||(s==="fav"&&isFav(i.id))||(s==="wrong"&&wrong[i.id])||(s==="mine"&&isMine(i))));
 }
 function clozeStart(){
   const p=shuffle(clozePool()).slice(0,10).map(makeCloze).filter(Boolean);
   Object.assign(cz,{q:p,i:0,ok:0,res:[],state:"ask"});
   $("cTot").textContent=p.length||0;
   if(!p.length){
-    $("cSentence").innerHTML=`<span class="zhhint">${{mine:"「我加的」里还没有带例句的词或短语，添加时写上例句就能用了。",fav:"收藏里还没有带例句的词。点单词旁边的星标就能收藏。"}[settings.clozeSrc]||"没有可用的题目。"}</span>`;
+    $("cSentence").innerHTML=`<span class="zhhint">${{mine:"「我加的」里还没有带例句的词。",fav:"收藏里还没有带例句的词。点单词旁边的星标就能收藏。",wrong:"错题本里没有可以出填空题的词，干得好！"}[settings.clozeSrc]||"没有可用的题目。"}</span>`;
     $("cHint").textContent="";$("cStar").innerHTML="";cz.cur=null;$("cDots").innerHTML="";$("cIdx").textContent=0;$("cOk").textContent=0;return;
   }
   clozeShow();
 }
 function clozeHint(){
   const c=cz.cur;if(!c){$("cStar").innerHTML="";return}
-  $("cStar").innerHTML=starBtn(c.item.id);
+  $("cStar").innerHTML=starBtn(c.item.id,true);
   const n=c.pick.words,tag=c.item.tag||"";
   const kind=/phr\. v\./.test(tag)?"动词短语":"短语";
   const peeks=[];
@@ -3063,6 +3099,33 @@ $("daySel").onchange=e=>{
   toast("已切换到第 "+settings.day+" 天："+DAYS[settings.day-1].t);
 };
 
+/* ================= wrong book ================= */
+function wrongItems(){return allItems().filter(i=>wrong[i.id]).sort((a,b)=>wrong[b.id]-wrong[a.id])}
+function updWrongCount(){
+  const n=wrongItems().length,el=$("wrongCount");
+  el.textContent=n;el.hidden=!n;
+}
+function renderWrong(){
+  const items=wrongItems();
+  $("wTotal").textContent=items.length;
+  $("wrongBar").querySelectorAll("[data-go]").forEach(b=>b.disabled=!items.length);
+  $("clearWrong").hidden=!items.length;
+  $("listWrong").innerHTML=items.map(i=>rowHTML(i,{unwrong:true})).join("")||`<div class="empty">错题本是空的。练习里答错的词会自动出现在这里。</div>`;
+}
+$("wrongBar").addEventListener("click",e=>{
+  const b=e.target.closest("[data-go]");if(!b)return;
+  const go=b.dataset.go;
+  if(go==="practice")document.querySelector('#srcSeg [data-src="wrong"]').click();
+  if(go==="rain"){if(rain.running){rain.running=false;cancelAnimationFrame(rain.raf)}document.querySelector('#rainSrcSeg [data-v="wrong"]').click()}
+  if(go==="cloze")document.querySelector('#clozeSrcSeg [data-v="wrong"]').click();
+  showTab(go);
+});
+$("clearWrong").onclick=e=>{
+  const b=e.currentTarget;
+  if(b.dataset.armed){wrong={};saveWrong();renderWrong();toast("错题本已清空");delete b.dataset.armed;b.textContent="清空错题本"}
+  else{b.dataset.armed="1";b.textContent="再点一次确认清空";setTimeout(()=>{if(b.dataset.armed){delete b.dataset.armed;b.textContent="清空错题本"}},3000)}
+};
+
 /* ================= boot ================= */
 buildQueue();
 (function first(){
@@ -3072,6 +3135,7 @@ buildQueue();
   $("feedback").textContent="点 ▶ 听读音，然后开始打字。";
 })();
 renderProgress();
+updWrongCount();
 })();
 </script>
 </body>
