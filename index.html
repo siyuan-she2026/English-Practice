@@ -280,8 +280,8 @@ h3.sub{font-family:var(--f-display);font-size:1.1rem;margin:28px 0 10px}
 .segt{border-bottom:2.5px solid var(--rc);padding:0 1px 1px;font-style:normal;color:var(--ink)}
 .segl{font-size:.64rem;line-height:1.3;font-style:normal;font-weight:700;color:var(--rc);font-family:"Noto Sans SC",var(--f-body);padding-left:1px;white-space:nowrap}
 .r-S{--rc:var(--c-s)}.r-V{--rc:var(--c-v)}.r-O{--rc:var(--c-o)}.r-C{--rc:var(--c-c)}.r-A{--rc:var(--c-a)}.r-K{--rc:var(--c-k)}
-.r-P,.r-T,.r-E,.r-F{--rc:var(--c-x)}
-.r-P .segt,.r-T .segt,.r-E .segt,.r-F .segt{border-bottom-style:dashed}
+.r-P,.r-T,.r-E,.r-F,.r-X{--rc:var(--c-x)}
+.r-P .segt,.r-T .segt,.r-E .segt,.r-F .segt,.r-X .segt{border-bottom-style:dashed}
 .exline .st{font-style:normal;color:var(--ink)}
 .legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.8rem;color:var(--muted);margin:-4px 0 12px}
 .legend span{display:inline-flex;align-items:center;gap:5px}
@@ -1356,7 +1356,7 @@ const ANN=[
 "[V:Can] [S:you] [V:turn] [O:the radiator] [V:up] [A:a bit]?",
 "[S:We] [V:haven't put] [O:the heating] [V:on] [A:yet].",
 "[S:It][V:'s] [C:bitterly cold] [A:tonight].",
-"[F:What a miserable day].",
+"[X:What a miserable day].",
 // ---- day 1 phrases
 "[F:Lovely day], [T:isn't it]?",
 "[S:It][V:'s] [C:freezing] [A:out there]!",
@@ -1870,7 +1870,7 @@ const ANN=[
 "[S:I][V:'m] [C:on antibiotics].",
 "[V:Did] [S:you] [V:watch] [O:the game]?",
 "[O:Who] [V:do] [S:you] [V:support]?",
-"[F:What a match]!",
+"[X:What a match]!",
 "[S:I][V:'m not] [C:really into football].",
 "[S:I][V:'ve been trying to get back into] [O:running].",
 "[S:I][V:'m aching] [A:all over].",
@@ -1887,7 +1887,7 @@ const ANN=[
 "[S:Everything][V:'s] [C:in the sale].",
 "[S:These shoes] [V:were reduced].",
 "[S:It][V:'s] [C:a bit pricey] [A:here].",
-"[F:Ten pounds for a coffee]? [F:What a rip-off]!",
+"[F:Ten pounds for a coffee]? [X:What a rip-off]!",
 "[S:I] [V:can't afford] [O:it] [A:right now].",
 "[S:I][V:'m] [C:on a tight budget] [A:this month].",
 "[S:I][V:'m] [C:skint] [A:until payday].",
@@ -2016,7 +2016,7 @@ const ANN=[
 "[V:Tell] [O:me] [A:about it].",
 "[F:Fair enough].",
 "[F:Good for you]!",
-"[F:What a nightmare]!",
+"[X:What a nightmare]!",
 "[S:That][V:'s] [C:a bit much].",
 "[F:Fair play to him].",
 "[S:It][V:'s not] [C:the end of the world].",
@@ -2348,7 +2348,7 @@ function tok(t){
   t.replace(WORD_RE,(m,off)=>{out+=esc(t.slice(last,off))+`<span class="lw">${esc(m)}</span>`;last=off+m.length;return m});
   return out+esc(t.slice(last));
 }
-const ROLE={S:"主语",V:"谓语",O:"宾语",C:"表语",K:"补语",A:"状语",P:"插入语",T:"反意疑问",E:"引导词",F:"固定说法"};
+const ROLE={S:"主语",V:"谓语",O:"宾语",C:"表语",K:"补语",A:"状语",P:"插入语",T:"反意疑问",E:"引导词",F:"固定说法",X:"感叹句（省略了 it is）"};
 const ANNMAP={};ANN.forEach(a=>{ANNMAP[a.replace(/\[[A-Z]:([^\]]*)\]/g,"$1")]=a});
 // a sentence as clickable words, with its structure marked when that view is on
 function sent(t){
@@ -2380,7 +2380,7 @@ const match=(it,q)=>!q||it.en.toLowerCase().includes(q)||it.zh.includes(q);
 seg("libSeg","lib",renderLib);
 $("structTog").checked=settings.struct;
 $("structTog").onchange=e=>{settings.struct=e.target.checked;saveSettings();renderLib();if(!$("dict").hidden)renderDict()};
-$("legend").innerHTML=["S","V","O","C","K","A","P"].map(r=>`<span class="r-${r}"><i></i>${ROLE[r]}</span>`).join("")+`<span>灰色虚线：插入语、反意疑问、There 引导词、固定说法</span>`;
+$("legend").innerHTML=["S","V","O","C","K","A","P"].map(r=>`<span class="r-${r}"><i></i>${ROLE[r]}</span>`).join("")+`<span>灰色虚线：插入语、反意疑问、There 引导词、感叹句、固定说法</span>`;
 $("qLib").oninput=renderLib;
 function renderLib(){
   const q=$("qLib").value.trim().toLowerCase();
