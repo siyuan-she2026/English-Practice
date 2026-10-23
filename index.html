@@ -306,6 +306,27 @@ h3.sub{font-family:var(--f-display);font-size:1.1rem;margin:28px 0 10px}
 .peeks{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .peeked{color:var(--muted)}
 .peeked b{color:var(--ink);font-family:"Noto Sans SC",var(--f-body)}
+.dict.ai{width:min(460px,calc(100% - 32px));max-height:min(80vh,680px);z-index:14}
+.aictx{background:var(--bg);border-radius:10px;padding:10px 12px;display:grid;gap:4px;font-size:1rem}
+.aictx .w{font-size:.82rem;color:var(--muted)}
+.aictx .w b{color:var(--ink)}
+.aichips{display:flex;flex-wrap:wrap;gap:6px}
+.aichat{display:grid;gap:10px}
+.aiq{justify-self:end;max-width:90%;background:var(--accent-soft);border-radius:12px 12px 4px 12px;padding:8px 12px;font-size:.95rem}
+.aia{background:var(--bg);border-radius:12px 12px 12px 4px;padding:10px 14px;font-size:.95rem;line-height:1.65;overflow-wrap:anywhere}
+.aia p{margin:0 0 8px}.aia p:last-child{margin:0}
+.aia ul{margin:4px 0 8px;padding-left:1.2em}
+.aia.wait{color:var(--muted)}
+.aia .err{color:var(--bad)}
+.aiform{display:flex;gap:8px}
+.aiform input{flex:1;min-width:0;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:8px 12px;font-size:1rem}
+.aiform input:focus{border-color:var(--accent);outline:none}
+.aisetup{display:grid;gap:10px;font-size:.92rem;color:var(--muted)}
+.aisetup b{color:var(--ink)}
+.aisetup input{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:8px 12px;font-family:var(--f-mono);font-size:.9rem;width:100%}
+.askbtn{margin-top:8px}
+.askmini{border:1px solid var(--line);background:transparent;border-radius:999px;padding:2px 9px;font-size:.75rem;font-weight:700;color:var(--accent);white-space:nowrap}
+.askmini:hover{border-color:var(--accent)}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-weight:700;font-size:.92rem;z-index:20;max-width:calc(100% - 32px);text-align:center}
 .toast.gold{background:var(--flame);color:#fff}
 
@@ -400,6 +421,7 @@ h3.sub{font-family:var(--f-display);font-size:1.1rem;margin:28px 0 10px}
       <div id="reveal" hidden>
         <div class="answer"><span class="lbl">正确拼写</span><span id="ansText"></span></div>
         <div class="example" id="ansEx"></div>
+        <button class="btn askbtn" id="sAsk">问 AI：这句为什么这样说？</button>
       </div>
       <div class="actions">
         <button class="btn primary" id="checkBtn">检查</button>
@@ -468,6 +490,7 @@ h3.sub{font-family:var(--f-display);font-size:1.1rem;margin:28px 0 10px}
       <div class="actions">
         <button class="btn primary" id="cCheck">检查</button>
         <button class="btn" id="cReveal">看答案</button>
+        <button class="btn askbtn" id="cAsk" hidden>问 AI</button>
         <div class="keys"><span><kbd>Enter</kbd> 检查 / 下一题</span><span><kbd>Esc</kbd> 重听</span></div>
       </div>
     </div>
@@ -557,6 +580,23 @@ I'm fed up with it. | 我受够了。"></textarea>
   </section>
 </main>
 
+<div class="dict ai" id="ai" role="dialog" aria-label="问 AI 老师" hidden>
+  <div class="dict-head">
+    <div class="hw"><b>问 AI 老师</b><span class="ph" id="aiVia"></span></div>
+    <button class="iconbtn close" id="aiClose" aria-label="关闭">×</button>
+  </div>
+  <div class="aictx" id="aiCtx"></div>
+  <div id="aiSetup" hidden></div>
+  <div id="aiMain">
+    <div class="aichips" id="aiChips"></div>
+    <div class="aichat" id="aiChat" aria-live="polite"></div>
+    <form class="aiform" id="aiForm">
+      <input id="aiIn" autocomplete="off" placeholder="比如：为什么这里用 by 不用 on？" aria-label="输入你的问题">
+      <button class="btn primary" id="aiSend">问</button>
+      <button class="btn" type="button" id="aiStop" hidden>停止</button>
+    </form>
+  </div>
+</div>
 <div class="dict" id="dict" role="dialog" aria-label="查词结果" hidden>
   <div class="dict-head">
     <div class="hw"><b id="dWord"></b><span class="ph" id="dPhon"></span></div>
@@ -565,7 +605,7 @@ I'm fed up with it. | 我受够了。"></textarea>
     <button class="iconbtn close" id="dClose" aria-label="关闭">×</button>
   </div>
   <div id="dBody"></div>
-  <div class="actions"><button class="btn primary" id="dAdd">加入我的词库</button><a class="btn" id="dCam" target="_blank" rel="noopener">剑桥词典</a></div>
+  <div class="actions"><button class="btn primary" id="dAdd">加入我的词库</button><button class="btn" id="dAsk">问 AI</button><a class="btn" id="dCam" target="_blank" rel="noopener">剑桥词典</a></div>
 </div>
 <div class="toast" id="toast" hidden></div>
 
@@ -2370,6 +2410,7 @@ function rowHTML(it,opts){
     </div>
     <div class="side">
       ${starBtn(it.id)}
+      ${it.ex||it.type==="phrase"?`<button class="askmini" data-ask="${it.id}" title="问 AI 这句为什么这样说">问 AI</button>`:""}
       ${wc?`<span class="badge">错 ${wc} 次</span>`:""}
       ${isMine(it)?`<span class="badge mine">我加的</span>`:""}
       ${opts&&opts.del?`<button class="del" data-del="${it.id}">删除</button>`:""}
@@ -2416,11 +2457,13 @@ function renderMine(){
 document.addEventListener("click",e=>{
   const fb=e.target.closest("[data-fav]");
   if(fb){const on=toggleFav(fb.dataset.fav);toast(on?"已收藏":"已取消收藏");if(curTab==="library"&&settings.lib==="fav"&&!on)renderLib();return}
+  const ab=e.target.closest("[data-ask]");
+  if(ab){const it=byId(ab.dataset.ask);if(it)openAI(aiCtxFromItem(it));return}
   const uw=e.target.closest("[data-unwrong]");
   if(uw){delete wrong[uw.dataset.unwrong];saveWrong();renderWrong();toast("已移出错题本");return}
   const lw=e.target.closest(".lw");
   if(lw){e.preventDefault();const c=lw.closest("[data-ctx]");lookup(lw.textContent,c?c.dataset.ctx:"");return}
-  if(!$("dict").hidden&&!e.target.closest("#dict")&&!e.target.closest("#lookForm"))closeDict();
+  if(!$("dict").hidden&&!e.target.closest("#dict")&&!e.target.closest("#lookForm")&&!e.target.closest("#ai"))closeDict();
   const s=e.target.closest("[data-say]");if(s){speak(s.dataset.say);return}
   const d=e.target.closest("[data-del]");
   if(d){
@@ -2810,6 +2853,7 @@ function clozeHint(){
     peeks.push([n>1?"空里是一个"+kind+"（"+n+" 个词）":"空里的词",c.item.zh]);
     if(c.item.exZh)peeks.push(["整句意思",c.item.exZh]);
   }else peeks.push(["整句意思",c.item.zh]);
+  $("cAsk").hidden=false;
   $("cHint").innerHTML=`<div class="peeks">${peeks.map(([l,t])=>`<button class="peek" data-label="${esc(l)}" data-text="${esc(t)}" aria-label="点击查看${esc(l)}">${esc(l)}<span class="mask"></span> 点击查看</button>`).join("")}</div>`;
 }
 function openPeek(b){const sp=document.createElement("span");sp.className="peeked";sp.innerHTML=`${esc(b.dataset.label)}：<b>${esc(b.dataset.text)}</b>`;b.replaceWith(sp)}
@@ -2869,7 +2913,7 @@ function clozeCheck(reveal){
   inp.select();
 }
 function clozeEnd(){
-  cz.cur=null;$("cStar").innerHTML="";
+  cz.cur=null;$("cStar").innerHTML="";$("cAsk").hidden=true;
   $("cHint").textContent="";$("cFeedback").textContent="";
   $("cSentence").innerHTML=`<div class="ov" style="justify-items:start;text-align:left"><h3 style="font-family:var(--f-display);margin:0">这一轮答对 ${cz.ok} / ${cz.q.length}</h3><button class="btn primary" id="cAgain">再来一轮</button></div>`;
   $("cAgain").onclick=clozeStart;$("cCheck").textContent="再来一轮";cz.state="end";
@@ -3084,8 +3128,120 @@ $("dAdd").onclick=()=>{
     if(curTab==="mine")renderMine();renderDict();
   }else toast("这个词已经在词库里了");
 };
-document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("dict").hidden)closeDict()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("ai").hidden){aiCtl&&aiCtl.abort();$("ai").hidden=true}else if(!$("dict").hidden)closeDict()}});
 $("lookForm").onsubmit=e=>{e.preventDefault();const v=$("lookIn").value.trim();if(v){lookup(v,"");$("lookIn").select()}};
+
+/* ================= AI teacher ================= */
+const AI_MODEL="claude-sonnet-5-5";
+let aiSample=null,aiCtl=null,aiTurns=[],aiCtxText="",aiBusy=false;
+const aiKey=()=>{try{return localStorage.getItem("vb.aikey")||""}catch(e){return ""}};
+(async()=>{try{if(window.claude&&typeof window.claude.use==="function")aiSample=await window.claude.use("sample")}catch(e){aiSample=null}})();
+function md(t){
+  // tiny, safe markdown: **bold**, "- " lists, paragraphs
+  const lines=esc(t).split("\n");let out="",list=false,para=[];
+  const flushP=()=>{if(para.length){out+="<p>"+para.join("<br>")+"</p>";para=[]}};
+  for(const raw of lines){
+    const l=raw.replace(/\*\*(.+?)\*\*/g,"<b>$1</b>");
+    if(/^\s*[-•]\s+/.test(l)){flushP();if(!list){out+="<ul>";list=true}out+="<li>"+l.replace(/^\s*[-•]\s+/,"")+"</li>"}
+    else{if(list){out+="</ul>";list=false}if(l.trim())para.push(l.replace(/^#+\s*/,""));else flushP()}
+  }
+  if(list)out+="</ul>";flushP();return out;
+}
+function structPlain(sentence){
+  const a=ANNMAP[sentence];if(!a)return "";
+  return [...a.matchAll(/\[([A-Z]):([^\]]*)\]/g)].map(m=>ROLE[m[1]]+"："+m[2]).join("；");
+}
+function openAI(ctx){
+  closeDict();
+  aiCtl&&aiCtl.abort();
+  aiTurns=[];aiBusy=false;
+  const lines=["句子："+ctx.sentence];
+  if(ctx.zh)lines.push("中文翻译："+ctx.zh);
+  if(ctx.word)lines.push("重点词："+ctx.word+(ctx.wordZh?"（"+ctx.wordZh+"）":""));
+  const st=structPlain(ctx.sentence);if(st)lines.push("句子结构："+st);
+  aiCtxText=lines.join("\n");
+  $("aiCtx").innerHTML=`<div data-ctx="${esc(ctx.sentence)}">${sent(ctx.sentence)}</div>${ctx.zh?`<div class="exzh">${esc(ctx.zh)}</div>`:""}${ctx.word?`<div class="w">重点词：<b>${esc(ctx.word)}</b>${ctx.wordZh?" · "+esc(ctx.wordZh):""}</div>`:""}`;
+  const chips=["这句为什么这样说？","拆解一下句子结构","还有哪些地道的说法？",ctx.word?"「"+ctx.word+"」还能怎么用？":"这句在什么场合用？"];
+  $("aiChips").innerHTML=chips.map(c=>`<button class="chip" data-q="${esc(c)}">${esc(c)}</button>`).join("");
+  $("aiChat").innerHTML="";$("aiIn").value="";
+  $("ai").hidden=false;
+  renderAIMode();
+  setTimeout(()=>{try{$("aiIn").focus({preventScroll:true})}catch(e){}},50);
+}
+function renderAIMode(){
+  const ready=!!aiSample||!!aiKey();
+  $("aiMain").hidden=!ready;$("aiSetup").hidden=ready;
+  $("aiVia").textContent=aiSample?"由 Claude 回答，使用你的 Claude 用量":aiKey()?"使用你的 Anthropic API Key":"";
+  if(!ready){
+    $("aiSetup").innerHTML=`<div class="aisetup">
+      <div>在 Claude 里打开这个网站时，可以直接用你的 Claude 账号提问，不用设置。</div>
+      <div>在你自己的网站上，需要填一个 <b>Anthropic API Key</b>（在 console.anthropic.com 创建，按用量单独计费）。Key 只保存在这台设备的浏览器里，不会上传到任何地方。</div>
+      <input id="aiKeyIn" type="password" placeholder="sk-ant-..." autocomplete="off" aria-label="Anthropic API Key">
+      <div class="actions"><button class="btn primary" id="aiKeySave">保存并开始提问</button><a class="btn" href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">去创建 Key</a></div></div>`;
+    $("aiKeySave").onclick=()=>{const v=$("aiKeyIn").value.trim();if(!v){$("aiKeyIn").focus();return}try{localStorage.setItem("vb.aikey",v)}catch(e){}renderAIMode()};
+  }
+}
+const AI_RULES="你是一位耐心、讲得清楚的英语老师。学生母语是中文，英语大约雅思 6.5，住在英国，想和本地人自然地闲聊。请用简体中文回答，具体、直接，一般不超过 200 字；需要时给 1 到 2 个英文对比例句并附中文。只回答和这句英语有关的问题。可以用 **加粗** 和以“- ”开头的列表，不要用标题。\n\n学生正在学的材料：\n";
+async function askAPI(turns,signal){
+  const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",signal,headers:{"content-type":"application/json","x-api-key":aiKey(),"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:AI_MODEL,max_tokens:1200,messages:turns})});
+  const j=await r.json().catch(()=>null);
+  if(!r.ok){const e=new Error((j&&j.error&&j.error.message)||("HTTP "+r.status));e.status=r.status;throw e}
+  return (j.content||[]).filter(c=>c.type==="text").map(c=>c.text).join("");
+}
+function aiErrText(e){
+  const c=e&&e.code;
+  if(c==="not_granted"||c==="sampling_disabled"||c==="not_declared")return "没有权限使用 Claude。可以在这个页面的权限设置里允许它使用 Claude。";
+  if(c==="rate_limited")return "问得太频繁了，或者用量到了上限，过一会儿再试。";
+  if(c==="session_expired")return "登录过期了，请重新登录 Claude。";
+  if(e&&e.status===401)return "API Key 不对，请检查后重新填写。";
+  if(e&&e.status===429)return "请求太频繁或额度用完了，稍后再试。";
+  if(e&&(e.status===400||e.status===402||e.status===403))return "API 拒绝了请求："+(e.message||"")+"。请检查账户余额或 Key 的权限。";
+  if(e instanceof TypeError)return "连不上 AI 服务，请检查网络。";
+  return "出错了，请稍后再试。";
+}
+async function aiAsk(q){
+  q=q.trim();if(!q||aiBusy)return;
+  if(!aiSample&&!aiKey()){renderAIMode();return}
+  aiBusy=true;$("aiSend").disabled=true;$("aiStop").hidden=false;
+  const qEl=document.createElement("div");qEl.className="aiq";qEl.textContent=q;$("aiChat").appendChild(qEl);
+  const aEl=document.createElement("div");aEl.className="aia wait";aEl.textContent="正在思考…";$("aiChat").appendChild(aEl);
+  aEl.scrollIntoView({block:"nearest",behavior:"smooth"});
+  const turns=aiTurns.length?aiTurns.concat({role:"user",content:q}):[{role:"user",content:AI_RULES+aiCtxText+"\n\n学生的问题："+q}];
+  aiCtl=new AbortController();
+  try{
+    let text;
+    if(aiSample){
+      const r=await aiSample(turns,{signal:aiCtl.signal,cache:false,onText:({text})=>{aEl.classList.remove("wait");aEl.innerHTML=md(text)}});
+      text=r.text;
+    }else text=await askAPI(turns,aiCtl.signal);
+    aEl.classList.remove("wait");aEl.innerHTML=md(text);
+    aiTurns=turns.concat({role:"assistant",content:text});
+  }catch(e){
+    const aborted=(e&&e.code==="cancelled")||(e&&e.name==="AbortError");
+    aEl.classList.remove("wait");
+    aEl.innerHTML=(e&&e.text?md(e.text):"")+(aborted?"":`<div class="err">${esc(aiErrText(e))}</div>`);
+    if(e&&e.status===401){try{localStorage.removeItem("vb.aikey")}catch(err){}}
+    if(aborted&&!(e&&e.text))aEl.innerHTML=`<span class="muted">已停止。</span>`;
+  }finally{
+    aiBusy=false;$("aiSend").disabled=false;$("aiStop").hidden=true;
+  }
+}
+$("aiForm").onsubmit=e=>{e.preventDefault();const v=$("aiIn").value;$("aiIn").value="";aiAsk(v)};
+$("aiStop").onclick=()=>aiCtl&&aiCtl.abort();
+$("aiClose").onclick=()=>{aiCtl&&aiCtl.abort();$("ai").hidden=true};
+$("aiChips").addEventListener("click",e=>{const b=e.target.closest("[data-q]");if(b)aiAsk(b.dataset.q)});
+function aiCtxFromItem(it,sentence){
+  const s0=sentence||it.ex||it.en;
+  const isOwn=s0===(it.ex||"")||s0===it.en;
+  return {sentence:s0,zh:it.type==="phrase"&&s0===it.en?it.zh:(isOwn?it.exZh||"":""),word:it.type==="word"?it.en:"",wordZh:it.type==="word"?it.zh:""};
+}
+$("sAsk").onclick=()=>{if(cur)openAI(aiCtxFromItem(cur))};
+$("cAsk").onclick=()=>{const c=cz.cur;if(!c)return;openAI({sentence:c.text,zh:c.item.type==="phrase"?c.item.zh:c.item.exZh||"",word:c.pick.core,wordZh:c.item.type==="word"?c.item.zh:""})};
+$("dAsk").onclick=()=>{
+  const {word,ctx,local,net}=dictState;
+  if(local.exact&&(!ctx||ctx===local.exact.ex||ctx===local.exact.en))openAI(aiCtxFromItem(local.exact));
+  else openAI({sentence:ctx||word,zh:"",word:local.exact?local.exact.en:(net&&net.word)||word,wordZh:local.exact?local.exact.zh:(net&&net.zh)||""});
+};
 
 /* ================= day picker ================= */
 $("daySel").innerHTML=DAYS.map((d,i)=>`<option value="${i+1}">第 ${i+1} 天 · ${esc(d.t)}</option>`).join("");
