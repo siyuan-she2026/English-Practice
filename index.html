@@ -284,6 +284,16 @@ h3.sub{font-family:var(--f-display);font-size:1.1rem;margin:28px 0 10px}
 .legend span{display:inline-flex;align-items:center;gap:5px}
 .legend i{display:inline-block;width:16px;height:0;border-bottom:3px solid var(--rc)}
 .legend .r-P i{border-bottom-style:dashed}
+.star{flex:none;width:34px;height:34px;border-radius:50%;border:0;background:transparent;color:var(--muted);display:inline-grid;place-items:center}
+.star svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round}
+.star.on{color:var(--flame)}
+.star.on svg{fill:currentColor}
+.star:hover{background:var(--accent-soft)}
+.exbody{min-width:0;display:grid;gap:2px}
+.exzh{font-style:normal;font-size:.88rem;color:var(--muted);font-family:"Noto Sans SC",var(--f-body)}
+.peeks{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.peeked{color:var(--muted)}
+.peeked b{color:var(--ink);font-family:"Noto Sans SC",var(--f-body)}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-weight:700;font-size:.92rem;z-index:20;max-width:calc(100% - 32px);text-align:center}
 .toast.gold{background:var(--flame);color:#fff}
 
@@ -353,6 +363,7 @@ h3.sub{font-family:var(--f-display);font-size:1.1rem;margin:28px 0 10px}
           <button class="chip" data-src="today" aria-pressed="true">今日单词</button>
           <button class="chip" data-src="todayP" aria-pressed="false">今日短语</button>
           <button class="chip" data-src="review" aria-pressed="false">已学复习</button>
+          <button class="chip" data-src="fav" aria-pressed="false">收藏</button>
           <button class="chip" data-src="mine" aria-pressed="false">我加的</button>
           <button class="chip" data-src="wrong" aria-pressed="false">错题本</button>
         </div>
@@ -366,6 +377,7 @@ h3.sub{font-family:var(--f-display);font-size:1.1rem;margin:28px 0 10px}
         <button class="play" id="playBtn" aria-label="播放读音"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 9v6h4l5 4V5L8 9H4zm12.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg></button>
         <button class="play slow" id="slowBtn" aria-label="慢速播放" title="慢速"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 6a8 8 0 0 0-8 8h2a6 6 0 0 1 12 0h2a8 8 0 0 0-8-8zm-1 4v5.3l4 2.4.8-1.3-3.3-2V10H11z"/></svg></button>
         <div class="meaning" id="meaning"></div>
+        <span id="sStar"></span>
         <label class="chip"><input type="checkbox" id="showZh" checked> 显示中文</label>
       </div>
       <div class="typebox" id="typebox">
@@ -398,6 +410,7 @@ h3.sub{font-family:var(--f-display);font-size:1.1rem;margin:28px 0 10px}
         <div class="seg" id="rainSrcSeg" aria-label="词源">
           <button class="chip" data-v="today">今日单词</button>
           <button class="chip" data-v="review">已学单词</button>
+          <button class="chip" data-v="fav">收藏</button>
           <button class="chip" data-v="mine">我加的</button>
           <button class="chip" data-v="wrong">错题本</button>
         </div>
@@ -425,6 +438,7 @@ h3.sub{font-family:var(--f-display);font-size:1.1rem;margin:28px 0 10px}
         <div class="seg" id="clozeSrcSeg" aria-label="题目来源">
           <button class="chip" data-v="today">今日</button>
           <button class="chip" data-v="review">已学复习</button>
+          <button class="chip" data-v="fav">收藏</button>
           <button class="chip" data-v="mine">我加的</button>
         </div>
         <div class="score"><span>第 <b id="cIdx">1</b>/<b id="cTot">10</b> 题</span><span>答对 <b id="cOk">0</b></span></div>
@@ -434,6 +448,7 @@ h3.sub{font-family:var(--f-display);font-size:1.1rem;margin:28px 0 10px}
         <button class="play" id="cPlay" aria-label="播放整句"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 9v6h4l5 4V5L8 9H4zm12.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg></button>
         <button class="play slow" id="cSlow" aria-label="慢速播放" title="慢速"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 6a8 8 0 0 0-8 8h2a6 6 0 0 1 12 0h2a8 8 0 0 0-8-8zm-1 4v5.3l4 2.4.8-1.3-3.3-2V10H11z"/></svg></button>
         <div class="zhhint" id="cHint" style="flex:1;min-width:0"></div>
+        <span id="cStar"></span>
       </div>
       <div class="sentence" id="cSentence"></div>
       <div class="feedback" id="cFeedback" aria-live="polite"></div>
@@ -474,6 +489,7 @@ h3.sub{font-family:var(--f-display);font-size:1.1rem;margin:28px 0 10px}
       <div class="seg" id="libSeg">
         <button class="chip" data-v="words" aria-pressed="true">单词</button>
         <button class="chip" data-v="phrases" aria-pressed="false">短语</button>
+        <button class="chip" data-v="fav" aria-pressed="false">收藏</button>
       </div>
       <input class="search" id="qLib" type="search" placeholder="搜索英文或中文">
       <label class="chip"><input type="checkbox" id="structTog"> 句子结构</label>
@@ -516,6 +532,7 @@ I'm fed up with it. | 我受够了。"></textarea>
 <div class="dict" id="dict" role="dialog" aria-label="查词结果" hidden>
   <div class="dict-head">
     <div class="hw"><b id="dWord"></b><span class="ph" id="dPhon"></span></div>
+    <span id="dStar"></span>
     <button class="iconbtn" id="dSay" aria-label="播放读音"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
     <button class="iconbtn close" id="dClose" aria-label="关闭">×</button>
   </div>
@@ -1981,6 +1998,58 @@ const ANN=[
 "[P:Sorry], [O:what] [V:were] [S:you] [V:saying]?",
 "[S:It][V:'s been] [C:lovely] [S:chatting to you]."
 ];
+const TR=[
+["一上午都在下毛毛雨。","我们回家路上遇上了一场大雨。","又是阴天，典型的十一月。","今天早上有点冷，是吧？","今天特别闷热，怎么都凉快不下来。","伦敦八月会相当潮湿。","外面冷得要命。","到目前为止，今年冬天挺暖和的。","海边微风习习，很舒服。","风太大了，没法把衣服晾出去。",
+"天气预报说晚点会放晴。","希望今天下午能放晴。","晚些时候可能会有几阵雨。","回来的路上变成了雨夹雪。","昨天下了豌豆大的冰雹。","今天早上下了很重的霜。","小心，人行道结冰了。","雾太浓了，我几乎看不见。","热浪期间大家都在抱怨。","周六热得要命。",
+"今天下午应该会有几段晴天。","这一整周都灰蒙蒙的。","我的衣服还是潮的。","我走过来的路上浑身湿透了。","别忘了带伞。","多穿几层，外面冷。","穿暖和点，冷死了。","一夜之间气温骤降。","雪到周一应该就化了。","应季水果通常更便宜。",
+"下周白天会少一个小时。","现在四点半黄昏时天就黑了。","我天没亮就起床了。","今天真是阴沉沉的。","我喜欢清冷爽快的秋日早晨。","今天海边狂风大作。","英国的天气太难预测了。","因为干旱，现在禁止用水管浇水。","河边那条路又被淹了。","我一脚踩进了水坑里。",
+"下雨天台阶很滑。","我的肩膀被晒伤了。","别忘了涂点防晒霜。","今天只有五度。","大约二十摄氏度。","这里面暖和又舒服。","你能把暖气调高一点吗？","我们还没开暖气。","今晚冷得刺骨。","今天天气真糟糕。"],
+["下班后我累坏了。","我累垮了，今晚得早点睡。","她对自己的成绩特别高兴。","他们输了，我特别失望。","我受够了每天通勤。","我最近压力特别大。","一开始我有点不知所措。","结束的时候我松了一大口气。","我们对新公寓特别兴奋。","我很乐意来。",
+"真的很感谢你的帮助。","面试前我会焦虑。","火车总让我特别恼火。","说实话，我有点生气。","她听到这个消息很难过。","你今天早上心情真好！","喝咖啡之前我脾气总是很差。","他最近有点喜怒无常。","我对现状挺满足的。","我有时候还是会想家。",
+"一个人住有时会很孤单。","一整天待在家里，我坐立不安。","这周真让人筋疲力尽。","这周忙得团团转。","最近工作忙疯了。","我们应该一起喝杯咖啡聊聊近况。","我在商店碰到了 Sarah。","好久没见到你了！","谢了，哥们。","谢谢啦。",
+"太好了，谢谢你。","真是好消息！","出现了一阵尴尬的沉默。","她是个特别真诚的人。","我今天心情不错。","新工作你应付得怎么样？","我听口音有点吃力。","你适应得还好吗？","她特别爱交朋友。","我觉得会没事的。",
+"要来杯茶吗？","我们喝杯茶聊聊吧。","聊得很开心。","办公室里大家经常互相打趣。","别担心，他只是在说反话。","这里的人很有礼貌。","我来给你介绍一下我的室友。","他与其说是朋友，不如说是熟人。","我们的邻居很友好。","我真为你高兴。"],
+["园艺在这里是很受欢迎的消遣。","周日我美美地睡了个懒觉。","这周末我就打算放松一下。","我靠跑步来放松。","我们通常在公园玩。","我们去峰区散步了。","爬到山顶要徒步三个小时。","我喜欢到乡下去走走。","我们周五要去看一场演出。","演出场地很小。",
+"博物馆有个新展览。","我们在美术馆待了一下午。","我一口气刷完了整季。","你看新一季了吗？","我看到第四集了。","请别剧透！","我通勤的时候听播客。","我在读一本特别好看的小说。","我加入了一个读书会。","她特别喜欢做手工。",
+"我整个周末都在自己动手修修弄弄。","我的邻居很喜欢园艺。","他在自己租的菜地里种菜。","这是我在后备箱集市上淘到的。","这件夹克是我在慈善二手店买的。","我们办了一个桌游之夜。","我们常去的酒吧每周二有知识竞赛之夜。","我办了健身房会员。","我开始练瑜伽了。","我特别喜欢摄影。",
+"我不太喜欢恐怖片。","她很喜欢她的狗。","他热爱烹饪。","我们全家去了趟动物园。","我们去布莱顿玩了一天。","这周末我们去海边吧。","我们在公园野餐了。","我们周六要搞烧烤。","你今年夏天去音乐节吗？","演出票全卖完了。",
+"我们排了一个小时的队才进去。","海滩上人特别多。","昨晚酒吧挤满了人。","你能推荐一部好电影吗？","我们说走就走，去海边吧。","你今晚有安排吗？","你空闲时间做什么？","我们要去湖区过个周末。","我旅行时喜欢画素描。","我最近开始喜欢上摄影了。"],
+["下班后去喝一杯吗？","这轮我请，你喝什么？","我要一品脱拉格。","你们有苹果酒吗？","你们有什么桶装生啤？","两杯下肚我就有点微醺了。","我宿醉得厉害。","我今晚不喝酒，我要开车。","我们今晚叫外卖吧？","什么都比不上周日烤肉大餐。",
+"我想来一份全套英式早餐。","我们合点一份前菜吧？","你主菜点什么？","还吃得下甜点吗？","这里的分量特别大。","我们午饭吃了剩菜。","我特别想吃巧克力。","我有点饿了。","我饿死了，开饭吧。","我吃撑了，一口也吃不下了。",
+"汤有点淡。","很辣吗？","薯条太油了。","比起甜的零食，我更喜欢咸的。","我特别爱吃甜食。","有素食可选吗？","她吃纯素好多年了。","我对坚果过敏。","你们有无麸质的食物吗？","主要配料是什么？",
+"你能把食谱发给我吗？","蛋糕是自己做的吗？","你要一包薯片吗？","请来一份炸鱼薯条。","喝茶配块饼干吧。","能给我们一些餐具吗？","我们要给小费吗？","账单里有服务费。","我们平摊账单吧？","我请客，把钱收起来。",
+"我们需要预订吗？","今天的特色菜是什么？","红狮酒吧是我常去的。","这家酒吧的饭菜很棒。","我们周日见面吃早午餐吧。","这个味道真好。","真好吃。","我没胃口了。","我能尝一口吗？","你喜欢泰国菜吗？"],
+["我通勤大约四十分钟。","高峰时段火车挤满了人。","北线有延误。","我的火车又取消了。","火车从四号站台出发。","买长期车票帮我省了很多钱。","周四铁路罢工。","我每周五远程办公。","我的工作是混合办公，三天在办公室。","我的同事都很友好。",
+"我问一下我的直属上司。","我的截止日期很紧。","我现在的工作量多得离谱。","我最近一直加班。","我明天上早班。","她刚升职了。","我希望今年能加薪。","工资还不错。","我还剩一周年假。","他今天请病假了。",
+"我周五休息一天。","周一是公共假日。","我们每周一开个简短的碰头会。","我的绩效评估很顺利。","谢谢你的反馈。","我更新了简历。","找工作找得怎么样了？","我在考虑转行。","你在哪个行业？","我是自由职业设计师。",
+"他自己干好多年了。","他去年被裁员了。","她辞职去创业了。","我昨天递了辞呈。","这是一份六个月的合同。","我的工作时间挺灵活的。","我被邮件淹没了。","抱歉，我整个下午都走不开。","我今天效率特别高。","在累垮之前休息一下吧。",
+"我们去食堂吃午饭吧。","请在前台登记。","我会再发封邮件跟进。","这个你能处理吗？","别担心，票我来搞定。","谁负责这个项目？","我今天下午要见一个客户。","我在缴纳公司的养老金。","周五发工资！","你几点下班？"],
+["我住在一套两居室的公寓里。","我的室友是西班牙人。","我得给房东打电话说锅炉的事。","租房中介带我们看了一圈。","我的租约三月到期。","我的押金全额退回来了。","这里的房租很高。","房租包水电煤吗？","市政税每月一号要交。","水电煤气都在我名下。",
+"锅炉又坏了。","浴室漏水了。","卧室墙上长霉了。","这栋老房子特别漏风。","公寓带家具吗？","不带家具，所以我们得买个沙发。","他们住独栋房子。","我们住半独立式房子。","这条街大多是联排房屋。","商业大街上有很多商店。",
+"这一带很安静。","我们搬到郊区去了。","我们下个月搬家。","搬家车九点到。","我们在重新布置客厅。","他们把厨房翻新了。","你能把垃圾拿出去吗？","可回收垃圾每周四收。","明天收垃圾吗？","我们楼上的邻居挺吵的。",
+"我帮你代收了一个包裹。","门铃坏了。","自行车在棚子里。","你可以把车停在门前车道上。","房产中介说会很快卖掉。","我们刚办了房贷。","我们周六要去看房。","客厅很宽敞。","我以前的公寓有点挤。","去车站很方便。",
+"附近生活设施很齐全。","我去街角小店一趟。","我出去买点牛奶，马上回来。","我们得叫个水管工。","电工明天来。","我们要办个乔迁派对。","你可以住在客房。","我得把公寓吸一下尘。","轮到你洗碗了。","我有一大堆衣服要洗。"],
+["你今年去度假吗？","我们需要出去放松一下。","我们今年在国内度假。","你今年夏天出国吗？","你最喜欢的旅行地是哪里？","我把我们的行程安排好了。","我们三点以后可以办入住。","我们得在十一点前退房。","你拿到登机牌了吗？","出发信息屏显示延误了。",
+"我们六点到达。","我们在迪拜中转停留了四个小时。","这次时差反应特别难受。","我只带手提行李。","我的行李箱太重了。","我还没收拾行李。","别忘了带护照。","我需要签证吗？","我得换点外币。","现在的汇率不太好。",
+"我买了几样纪念品。","我们去了很多景点。","这是这座城市最有名的地标。","有点商业化，不过值得一看。","我们发现了一个人迹罕至的小村庄。","景色美得令人窒息。","苏格兰的风景太美了。","我们沿着海岸开车。","我们在康沃尔租了一间乡村小屋。","我们住在一家很不错的民宿。",
+"我上学时住过青年旅舍。","我们要去自驾游。","办张火车优惠卡吧，能省三分之一。","一张去约克的往返票，谢谢。","单程票就行，谢谢。","非高峰时段的票便宜得多。","路上怎么样？","我错过了转乘。","你买旅行保险了吗？","我们在西班牙订了全包式度假。",
+"你晒得真好看！","特别放松。","那是一次特别难忘的旅行。","我们花了一天时间逛老城区。","爱丁堡有什么推荐吗？","旅游指南上说周一闭馆。","刚开始我有点文化冲击。","冰岛在我的人生愿望清单上。","我背包游过亚洲。","我还有点倒时差。"],
+["我需要在全科诊所登记。","诊所八点开门。","你可以在药房买到。","我去趟药店。","我得去取处方药。","你有什么症状？","我喉咙痛。","我流鼻涕。","这咳嗽我怎么都好不了。","她发烧了。",
+"我头痛欲裂。","我有点不舒服。","办公室里有病在传染。","办公室一半的人都得了流感。","你打流感疫苗了吗？","我感冒还没好利索。","吃两片止痛药吧。","他因为膝伤不能上场。","我踢足球时扭伤了脚踝。","我们在急诊待了四个小时。",
+"我约了看医生。","NHS 看病时不用付费。","我得找个 NHS 牙医。","我尽量每周锻炼三次。","我在努力把身体练好。","我最近身体状态太差了。","我绕着公园慢跑。","记得之后拉伸一下。","昨天练完，我的腿很酸。","爬完楼梯我上气不接下气。",
+"我们先热身吧。","我在提高体能。","我在努力吃得更健康。","均衡饮食很重要。","我在减少吃糖。","散步对身心都很好。","照顾好你的心理健康。","球场上全是泥。","你看昨晚的比赛了吗？","我是利物浦的球迷。",
+"他们在联赛中排第一。","谁进的球？","比赛以平局结束。","这场裁判吹得很糟。","骑车上班让我保持健康。","她在为马拉松训练。","瑜伽真的能帮我放松。","整天坐着对我的体态不好。","一定要多喝水。","医生给我开了抗生素。"],
+["这真划算。","你们有学生折扣吗？","所有东西都在打折。","这双鞋降价了。","这里有点贵。","一杯咖啡十英镑？真是宰人！","我现在买不起。","我这个月预算很紧。","发工资之前我身无分文。","才花了五英镑。",
+"能借我五英镑吗？","每个十英镑。","你有零钱吗？","我能用感应支付吗？","你需要收据吗？","我想退款。","我能换个大一号的吗？","这个水壶有毛病。","我能试一下蓝色那件吗？","试衣间在哪里？",
+"你穿多大号？","这个颜色很适合你。","我只是随便看看。","收银台排着长队。","我总是用自助收银。","你有会员卡吗？","我忘带购物袋了。","我大部分网购都是晚上做的。","免运费吗？","抱歉，缺货了。",
+"是什么牌子的？","我买的二手的。","我狠心买了件新大衣。","买吧，犒劳一下自己！","完全是冲动消费。","性价比很高。","饮料定价太高了。","在做活动，买一送一。","超市自有品牌的东西也一样好。","生活成本上涨了。",
+"通货膨胀影响着每个人。","我在攒钱去度假。","我需要开个银行账户。","我又透支了。","这张卡有返现。","我取消了流媒体订阅。","这个月的能源账单好高。","我用自动扣款付这笔钱。","在这里的商店里基本没法讨价还价。","我们去逛街了，只看不买。"],
+["说实话，我不太喜欢。","据说要下雪了。","简单来说，我们没时间了。","我简直是一路跑过来的。","说句公道话，他确实道歉了。","我一定会来。","当然，我同意。","这一带挺安静的。","这电影太烂了。","那家餐厅看起来有点不靠谱。",
+"下班后偷偷去喝一杯？","我听说的时候都惊呆了。","别担心，都搞定了。","这才叫像样的一顿饭。","我有一大堆事要做。","我就买点零碎东西。","去那里太麻烦了。","他是个好人。","他是个友善的小伙子。","对我来说有点太高档了。",
+"这是一家有点古怪又有趣的小咖啡馆。","我觉得它被高估了。","那个地方完全被高估了。","这是一部被严重低估的电影。","这有点争议。","说得好。","听听你的看法挺有意思的。","这一点我不同意你。","这件事争议很大。","你看今天早上的头条了吗？",
+"我尽量关注时事。","你会在选举中投票吗？","新政策有点让人搞不懂。","有传言说他们要关店了。","你听说最新的八卦了吗？","它在社交媒体上很火。","那个视频火遍全网。","你提过你去过意大利。","我以为你已经走了。","我想你是对的。",
+"我爱喝茶，而我太太更喜欢咖啡。","话说回来，我们刚才聊到哪儿了？","顺便问一下，你收到我的消息了吗？","其实我改主意了。","挺贵的。不过话说回来，真的很好吃。","这不公平。","这太奇怪了。","那个节目太搞笑了。","一想到那件事我就尴尬。","我越来越会闲聊了。"]
+];
 // opts: [english, isRight, note, chinese(for the right one)]
 const SCENES=[
  {id:"cafe",title:"咖啡店点单",en:"At the café",turns:[
@@ -2088,18 +2157,29 @@ let custom=store.get("vb.custom",[]);
 let wrong=store.get("vb.wrong",{});
 let settings=Object.assign({accent:"en-GB",rate:0.9,showZh:true,src:"today",goal:70,rainShow:"en",rainSrc:"today",rainSound:true,clozeSrc:"today",talkMode:"pick",lib:"words",day:1,struct:true},store.get("vb.settings",{}));
 // settings saved by the earlier version used different source names
-if(!["today","todayP","review","mine","wrong"].includes(settings.src))settings.src="today";
-if(!["today","review","mine","wrong"].includes(settings.rainSrc))settings.rainSrc="today";
-if(!["today","review","mine"].includes(settings.clozeSrc))settings.clozeSrc="today";
+if(!["today","todayP","review","fav","mine","wrong"].includes(settings.src))settings.src="today";
+if(!["today","review","fav","mine","wrong"].includes(settings.rainSrc))settings.rainSrc="today";
+if(!["today","review","fav","mine"].includes(settings.clozeSrc))settings.clozeSrc="today";
 if(settings.v!==2){settings.v=2;settings.goal=70}
 const saveSettings=()=>store.set("vb.settings",settings);
 let stats=store.get("vb.stats",{date:today,done:0,ok:0});
 if(stats.date!==today)stats={date:today,done:0,ok:0};
 const saveWrong=()=>store.set("vb.wrong",wrong);
+let fav=store.get("vb.fav",{});
+const isFav=id=>!!fav[id];
+const STAR='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg>';
+const starBtn=id=>id?`<button class="star${isFav(id)?" on":""}" data-fav="${id}" aria-pressed="${isFav(id)}" aria-label="收藏" title="${isFav(id)?"取消收藏":"收藏"}">${STAR}</button>`:"";
+function toggleFav(id,force){
+  const on=force===undefined?!fav[id]:force;
+  if(on)fav[id]=Date.now();else delete fav[id];
+  store.set("vb.fav",fav);
+  document.querySelectorAll('[data-fav="'+id+'"]').forEach(b=>{b.classList.toggle("on",on);b.setAttribute("aria-pressed",on);b.title=on?"取消收藏":"收藏"});
+  return on;
+}
 
 const BASE=[];
 DAYS.forEach((d,n)=>{
-  d.w.forEach((s,i)=>{const f=s.split("|");BASE.push({id:"d"+(n+1)+"w"+i,day:n+1,type:"word",en:f[0],tag:f[1],zh:f[2],ex:f[3]})});
+  d.w.forEach((s,i)=>{const f=s.split("|");BASE.push({id:"d"+(n+1)+"w"+i,day:n+1,type:"word",en:f[0],tag:f[1],zh:f[2],ex:f[3],exZh:TR[n][i]})});
   d.p.forEach((s,i)=>{const f=s.split("|");BASE.push({id:"d"+(n+1)+"p"+i,day:n+1,type:"phrase",tag:d.t,en:f[0],zh:f[1],ex:""})});
 });
 function allItems(){return BASE.concat(custom)}
@@ -2243,7 +2323,7 @@ function sent(t){
   if(!a)return tok(t);
   return `<span class="st">`+a.replace(/\[([A-Z]):([^\]]*)\]|([^\[]+)/g,(m,r,x,plain)=>r?`<span class="seg r-${r}"><span class="segt">${tok(x)}</span><span class="segl">${ROLE[r]}</span></span>`:tok(plain))+`</span>`;
 }
-const exLine=ex=>`<div class="exline" data-ctx="${esc(ex)}"><button class="say" data-say="${esc(ex)}" aria-label="播放例句">${SPK}</button><span>${sent(ex)}</span></div>`;
+const exLine=(ex,zh)=>`<div class="exline" data-ctx="${esc(ex)}"><button class="say" data-say="${esc(ex)}" aria-label="播放例句">${SPK}</button><div class="exbody"><span>${sent(ex)}</span>${zh?`<span class="exzh">${esc(zh)}</span>`:""}</div></div>`;
 
 /* ================= library & add ================= */
 function rowHTML(it,opts){
@@ -2253,9 +2333,10 @@ function rowHTML(it,opts){
     <div class="txt">
       <div class="enw" data-ctx="${esc(it.en)}">${it.type==="phrase"?sent(it.en):esc(it.en)}${it.type==="word"&&it.tag?`<span class="tag">${esc(it.tag)}</span>`:""}</div>
       <div class="zh">${esc(it.zh)}</div>
-      ${it.ex?exLine(it.ex):""}
+      ${it.ex?exLine(it.ex,it.exZh):""}
     </div>
     <div class="side">
+      ${starBtn(it.id)}
       ${wc?`<span class="badge">错 ${wc} 次</span>`:""}
       ${isMine(it)?`<span class="badge mine">我加的</span>`:""}
       ${opts&&opts.del?`<button class="del" data-del="${it.id}">删除</button>`:""}
@@ -2271,6 +2352,14 @@ function renderLib(){
   const q=$("qLib").value.trim().toLowerCase();
   const type=settings.lib==="phrases"?"phrase":"word";
   const d=curDay();
+  if(settings.lib==="fav"){
+    const items=allItems().filter(i=>isFav(i.id)&&match(i,q)).sort((a,b)=>fav[b.id]-fav[a.id]);
+    $("libTitle").textContent="我的收藏";
+    $("libLede").textContent=items.length?"一共 "+Object.keys(fav).filter(id=>byId(id)).length+" 个，最近收藏的在前面。拼写、单词雨、听句填空都可以选「收藏」来复习。":"";
+    $("legend").hidden=!settings.struct;
+    $("listLib").innerHTML=items.map(i=>rowHTML(i)).join("")||`<div class="empty">${q?"收藏里没有「"+esc(q)+"」":"还没有收藏。点单词旁边的星标就能收藏，方便以后专门复习。"}</div>`;
+    return;
+  }
   $("libTitle").textContent="第 "+d+" 天 · "+DAYS[d-1].t;
   let html="";
   if(q){
@@ -2291,6 +2380,8 @@ function renderMine(){
   $("listMine").innerHTML=custom.length?custom.slice().reverse().map(i=>rowHTML(i,{del:true})).join(""):`<div class="empty">还没有添加。用上面的表格加第一个词吧。</div>`;
 }
 document.addEventListener("click",e=>{
+  const fb=e.target.closest("[data-fav]");
+  if(fb){const on=toggleFav(fb.dataset.fav);toast(on?"已收藏":"已取消收藏");if(curTab==="library"&&settings.lib==="fav"&&!on)renderLib();return}
   const lw=e.target.closest(".lw");
   if(lw){e.preventDefault();const c=lw.closest("[data-ctx]");lookup(lw.textContent,c?c.dataset.ctx:"");return}
   if(!$("dict").hidden&&!e.target.closest("#dict")&&!e.target.closest("#lookForm"))closeDict();
@@ -2339,6 +2430,7 @@ function pool(src){
   if(src==="today")return all.filter(i=>inToday(i)&&i.type==="word");
   if(src==="todayP")return all.filter(i=>inToday(i)&&i.type==="phrase");
   if(src==="review")return all.filter(learned);
+  if(src==="fav")return all.filter(i=>isFav(i.id));
   if(src==="mine")return all.filter(isMine);
   return all.filter(i=>wrong[i.id]);
 }
@@ -2349,6 +2441,7 @@ srcBtns.forEach(b=>b.setAttribute("aria-pressed",b.dataset.src===settings.src));
 $("showZh").checked=settings.showZh;
 $("showZh").onchange=e=>{settings.showZh=e.target.checked;saveSettings();renderMeaning();focusTyper()};
 function renderMeaning(){
+  $("sStar").innerHTML=cur?starBtn(cur.id):"";
   if(!cur){$("meaning").innerHTML="";return}
   $("meaning").innerHTML=settings.showZh
     ?`<div class="zh">${esc(cur.zh)}</div><div class="pos">${cur.type==="word"?esc(cur.tag||"单词"):"短语 · "+esc(cur.tag||"")}</div>`
@@ -2360,7 +2453,7 @@ function next(){
   if(!queue.length){
     if(!pool(settings.src).length){
       cur=null;
-      const msg={wrong:"错题本是空的，干得好！",mine:"还没有自己加的词，去「添加」页加几个吧。"}[settings.src]||"没有可练的内容。";
+      const msg={wrong:"错题本是空的，干得好！",mine:"还没有自己加的词，去「添加」页加几个吧。",fav:"还没有收藏。点单词旁边的星标就能收藏。"}[settings.src]||"没有可练的内容。";
       $("slots").innerHTML=`<span style="font-family:var(--f-body);font-size:1rem;font-weight:400;color:var(--muted)">${msg}</span>`;
       renderMeaning();updateScore();return;
     }
@@ -2444,7 +2537,7 @@ function check(){
   }else{fb.textContent="还不对，照着淡色的字母再打一遍。";fb.className="feedback no"}
   focusTyper();
 }
-function showAnswer(){$("ansText").textContent=cur.en;$("ansEx").innerHTML=cur.ex?`<span data-ctx="${esc(cur.ex)}">${sent(cur.ex)}</span>`:"";$("reveal").hidden=false}
+function showAnswer(){$("ansText").textContent=cur.en;$("ansEx").innerHTML=cur.ex?`<span data-ctx="${esc(cur.ex)}">${sent(cur.ex)}</span>${cur.exZh?`<div class="exzh">${esc(cur.exZh)}</div>`:""}`:"";$("reveal").hidden=false}
 $("checkBtn").onclick=()=>{check();focusTyper()};
 $("hintBtn").onclick=hint;
 $("skipBtn").onclick=()=>next();
@@ -2468,6 +2561,7 @@ function rainPool(){
   if(settings.rainSrc==="mine")return all.filter(isMine);
   if(settings.rainSrc==="wrong")return all.filter(i=>wrong[i.id]);
   if(settings.rainSrc==="review")return all.filter(i=>learned(i)&&i.type==="word");
+  if(settings.rainSrc==="fav")return all.filter(i=>isFav(i.id));
   return all.filter(i=>inToday(i)&&i.type==="word");
 }
 function hud(){
@@ -2481,7 +2575,7 @@ function rainShowIdle(){
   if(rain.running){if(rain.paused)return;return}
   const n=rainPool().length;
   hud();
-  if(!n){overlay(`<div class="ov"><h3>单词雨</h3><p>${settings.rainSrc==="wrong"?"错题本是空的，换个词源吧。":"「我加的」里还没有词，先去「添加」页加几个。"}</p></div>`);return}
+  if(!n){overlay(`<div class="ov"><h3>单词雨</h3><p>${{wrong:"错题本是空的，换个词源吧。",fav:"还没有收藏的词。点单词旁边的星标就能收藏。"}[settings.rainSrc]||"「我加的」里还没有词，先去「添加」页加几个。"}</p></div>`);return}
   overlay(`<div class="ov"><h3>单词雨</h3>
     <p>${settings.rainShow==="zh"?"中文":"单词"}会从上面往下掉，在下方输入框打出${settings.rainShow==="zh"?"对应的英文":"这个词"}就能消掉。漏掉 3 个游戏结束，越往后掉得越快。</p>
     <p>漏掉的词会自动进错题本。</p>
@@ -2658,27 +2752,33 @@ function makeCloze(item){
 function clozePool(){
   const all=allItems();
   const s=settings.clozeSrc;
-  return all.filter(i=>(i.type==="phrase"||i.ex)&&((s==="today"&&inToday(i))||(s==="review"&&learned(i))||(s==="mine"&&isMine(i))));
+  return all.filter(i=>(i.type==="phrase"||i.ex)&&((s==="today"&&inToday(i))||(s==="review"&&learned(i))||(s==="fav"&&isFav(i.id))||(s==="mine"&&isMine(i))));
 }
 function clozeStart(){
   const p=shuffle(clozePool()).slice(0,10).map(makeCloze).filter(Boolean);
   Object.assign(cz,{q:p,i:0,ok:0,res:[],state:"ask"});
   $("cTot").textContent=p.length||0;
   if(!p.length){
-    $("cSentence").innerHTML=`<span class="zhhint">${settings.clozeSrc==="mine"?"「我加的」里还没有带例句的词或短语，添加时写上例句就能用了。":"没有可用的题目。"}</span>`;
-    $("cHint").textContent="";$("cDots").innerHTML="";$("cIdx").textContent=0;$("cOk").textContent=0;return;
+    $("cSentence").innerHTML=`<span class="zhhint">${{mine:"「我加的」里还没有带例句的词或短语，添加时写上例句就能用了。",fav:"收藏里还没有带例句的词。点单词旁边的星标就能收藏。"}[settings.clozeSrc]||"没有可用的题目。"}</span>`;
+    $("cHint").textContent="";$("cStar").innerHTML="";cz.cur=null;$("cDots").innerHTML="";$("cIdx").textContent=0;$("cOk").textContent=0;return;
   }
   clozeShow();
 }
-function clozeHint(open){
-  const c=cz.cur;if(!c)return;
+function clozeHint(){
+  const c=cz.cur;if(!c){$("cStar").innerHTML="";return}
+  $("cStar").innerHTML=starBtn(c.item.id);
   const n=c.pick.words,tag=c.item.tag||"";
   const kind=/phr\. v\./.test(tag)?"动词短语":"短语";
-  const label=c.item.type!=="word"?"整句意思":n>1?"空里是一个"+kind+"（"+n+" 个词）":"空里的词";
-  if(open){$("cHint").innerHTML=`${label}：<b>${esc(c.item.zh)}</b>`;return}
-  $("cHint").innerHTML=`<button class="peek" id="cPeek" aria-label="点击查看中文意思">${label}<span class="mask"></span> 点击查看</button>`;
-  $("cPeek").onclick=()=>{clozeHint(true);try{$("cIn").focus({preventScroll:true})}catch(e){}};
+  const peeks=[];
+  if(c.item.type==="word"){
+    peeks.push([n>1?"空里是一个"+kind+"（"+n+" 个词）":"空里的词",c.item.zh]);
+    if(c.item.exZh)peeks.push(["整句意思",c.item.exZh]);
+  }else peeks.push(["整句意思",c.item.zh]);
+  $("cHint").innerHTML=`<div class="peeks">${peeks.map(([l,t])=>`<button class="peek" data-label="${esc(l)}" data-text="${esc(t)}" aria-label="点击查看${esc(l)}">${esc(l)}<span class="mask"></span> 点击查看</button>`).join("")}</div>`;
 }
+function openPeek(b){const sp=document.createElement("span");sp.className="peeked";sp.innerHTML=`${esc(b.dataset.label)}：<b>${esc(b.dataset.text)}</b>`;b.replaceWith(sp)}
+function clozeRevealHints(){$("cHint").querySelectorAll(".peek").forEach(openPeek)}
+$("cHint").addEventListener("click",e=>{const b=e.target.closest(".peek");if(b){openPeek(b);try{$("cIn").focus({preventScroll:true})}catch(err){}}});
 function clozeShow(){
   const c=cz.cur=cz.q[cz.i];cz.state="ask";cz.tries=0;
   $("cIdx").textContent=cz.i+1;$("cOk").textContent=cz.ok;
@@ -2706,14 +2806,14 @@ function clozeCheck(reveal){
   const markWrong=()=>{if(cz.res[cz.i]===undefined){cz.res[cz.i]=false;addWrong(c.item.id);paintDots()}};
   if(reveal){
     // show the answer faintly; the user still has to type it to move on
-    markWrong();cz.state="retype";
+    markWrong();cz.state="retype";clozeRevealHints();
     inp.value="";inp.placeholder=c.pick.core;inp.classList.remove("no");
     fb.textContent="答案是 "+c.pick.core+"，照着打一遍就能进入下一题。";fb.className="feedback no";
     speak(c.text,true);inp.focus();return;
   }
   if(!v){inp.focus();return}
   if(v===ans){
-    cz.state="done";inp.readOnly=true;inp.classList.remove("no");inp.classList.add("ok");inp.value=c.pick.core;
+    cz.state="done";inp.readOnly=true;inp.classList.remove("no");inp.classList.add("ok");inp.value=c.pick.core;clozeRevealHints();
     if(cz.res[cz.i]===undefined){
       cz.ok++;cz.res[cz.i]=true;
       fb.textContent="答对了！";counters.clozeOk++;fixWrong(c.item.id);addPoint();
@@ -2733,7 +2833,7 @@ function clozeCheck(reveal){
   inp.select();
 }
 function clozeEnd(){
-  cz.cur=null;
+  cz.cur=null;$("cStar").innerHTML="";
   $("cHint").textContent="";$("cFeedback").textContent="";
   $("cSentence").innerHTML=`<div class="ov" style="justify-items:start;text-align:left"><h3 style="font-family:var(--f-display);margin:0">这一轮答对 ${cz.ok} / ${cz.q.length}</h3><button class="btn primary" id="cAgain">再来一轮</button></div>`;
   $("cAgain").onclick=clozeStart;$("cCheck").textContent="再来一轮";cz.state="end";
@@ -2900,6 +3000,7 @@ function renderDict(){
   const {word,ctx,net,local,loading}=dictState;
   const head=local.exact?local.exact.en:(net&&net.word)||word;
   $("dWord").textContent=head;
+  $("dStar").innerHTML=local.exact?starBtn(local.exact.id):"";
   $("dPhon").textContent=net&&net.phonetic||"";
   $("dCam").href="https://dictionary.cambridge.org/dictionary/english-chinese-simplified/"+encodeURIComponent(head.toLowerCase().replace(/ /g,"-"));
   let h="";
@@ -2907,7 +3008,7 @@ function renderDict(){
     const it=local.exact;
     h+=`<div class="dsec"><span class="lbl">${it.day?"你的词表 · 第 "+it.day+" 天":"我加的词"}</span>
       <div class="zhbig">${esc(it.zh)} <span class="src">${it.type==="word"?esc(it.tag||""):"短语"}</span></div>
-      ${it.ex?exLine(it.ex):""}</div>`;
+      ${it.ex?exLine(it.ex,it.exZh):""}</div>`;
   }else if(net&&net.zh){
     h+=`<div class="dsec"><span class="lbl">中文</span><div class="zhbig">${esc(net.zh)} <span class="src">机器翻译，仅供参考</span></div></div>`;
   }
@@ -2941,7 +3042,9 @@ $("dAdd").onclick=()=>{
   const ctxOk=ctx&&lw.some(l=>ctx.toLowerCase().includes(l));
   const ex=ctxOk?ctx:(first&&first.defs.find(d=>d.ex)||{}).ex||"";
   if(addItem(en,zh,"word",first?POS_ABBR[first.pos]||first.pos:"",ex)){
-    store.set("vb.custom",custom);toast("已加入「我加的」，所有玩法都能练");
+    store.set("vb.custom",custom);toggleFav(custom[custom.length-1].id,true);
+    dictState.local=localMatch(dictState.word);
+    toast("已加入「我加的」并收藏，所有玩法都能练");
     if(curTab==="mine")renderMine();renderDict();
   }else toast("这个词已经在词库里了");
 };
