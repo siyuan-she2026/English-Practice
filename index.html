@@ -160,6 +160,13 @@ kbd{font-family:var(--f-mono);font-size:.78rem;border:1px solid var(--line);bord
 .drop.miss{animation:sink .45s forwards;border-color:var(--bad);color:var(--bad)}
 @keyframes pop{to{transform:var(--t) scale(1.5);opacity:0}}
 @keyframes sink{to{opacity:0}}
+.burst{position:absolute;top:0;z-index:1;pointer-events:none;background:var(--ok-soft);color:var(--ink);border:1px solid var(--ok);border-radius:8px;padding:4px 10px;white-space:nowrap;font-weight:700;font-size:1rem;animation:rise 2s forwards}
+.burst span{font-weight:500;margin-left:8px;font-family:"Noto Sans SC",var(--f-body)}
+@keyframes rise{0%{opacity:0;transform:translateY(var(--y))}8%{opacity:1}75%{opacity:1;transform:translateY(calc(var(--y) - 28px))}100%{opacity:0;transform:translateY(calc(var(--y) - 40px))}}
+@media (prefers-reduced-motion:reduce){.burst{animation:sink 2s forwards;transform:translateY(var(--y))}}
+.lasthit{min-height:1.6em;font-size:.95rem;color:var(--muted)}
+.lasthit b{color:var(--ok);font-family:var(--f-mono)}
+.lasthit .z{color:var(--ink);font-family:"Noto Sans SC",var(--f-body)}
 .ghost{position:absolute;bottom:10px;font-family:var(--f-mono);font-weight:700;color:var(--bad);background:var(--bad-soft);padding:2px 8px;border-radius:6px;animation:sink 1.6s 0.6s forwards;pointer-events:none}
 .overlay{position:absolute;inset:0;display:grid;place-items:center;padding:16px;background:color-mix(in srgb,var(--bg) 82%,transparent);z-index:2;overflow:auto}
 .ov{max-width:440px;text-align:center;display:grid;gap:12px;justify-items:center}
@@ -467,6 +474,7 @@ h3.sub{font-family:var(--f-display);font-size:1.1rem;margin:28px 0 10px}
       <div class="field" id="field">
         <div class="overlay" id="rainOverlay"></div>
       </div>
+      <div class="lasthit" id="rLast" aria-live="polite"></div>
       <input id="rainInput" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="在这里打字，打对就自动消掉" aria-label="单词雨输入框">
       <div class="actions"><div class="keys" style="margin-left:0"><span><kbd>Esc</kbd> 清空输入</span><span>不区分大小写</span><span>连击越高，每个词得分越多</span></div><button class="btn ghost" id="rainPauseBtn" style="margin-left:auto">暂停</button></div>
     </div>
@@ -2753,11 +2761,11 @@ $("rainOverlay").addEventListener("click",e=>{
   if(a.dataset.act==="start")rainStart();
   if(a.dataset.act==="resume")rainResume();
 });
-function clearDrops(){rain.drops.forEach(d=>d.el.remove());rain.drops=[];field.querySelectorAll(".ghost,.drop").forEach(e=>e.remove())}
+function clearDrops(){rain.drops.forEach(d=>d.el.remove());rain.drops=[];field.querySelectorAll(".ghost,.drop,.burst").forEach(e=>e.remove())}
 function rainStart(){
   clearDrops();
   Object.assign(rain,{running:true,paused:false,score:0,lives:3,kills:0,combo:0,level:1,acc:99,missed:[]});
-  $("rainOverlay").hidden=true;hud();rIn.value="";
+  $("rainOverlay").hidden=true;hud();rIn.value="";$("rLast").textContent="";
   rain.last=performance.now();rain.raf=requestAnimationFrame(frame);
   rIn.focus();$("rainPauseBtn").textContent="暂停";
 }
@@ -2823,7 +2831,20 @@ function miss(d){
   hud();
   if(rain.lives<=0)rainOver();
 }
+// show what was just cleared, with its meaning, where it was hit and under the field
+function burst(d){
+  const b=document.createElement("div");b.className="burst";
+  b.innerHTML=`${esc(d.item.en)}<span>${esc(d.item.zh)}</span>`;
+  const y=Math.max(0,Math.min(d.y,field.clientHeight-48));
+  b.style.setProperty("--y",y+"px");
+  field.appendChild(b);
+  const W=field.clientWidth,w=b.offsetWidth,left=parseFloat(d.el.style.left)||6;
+  b.style.left=Math.max(6,Math.min(left,W-w-6))+"px";
+  setTimeout(()=>b.remove(),2100);
+  $("rLast").innerHTML=`刚消掉：<b>${esc(d.item.en)}</b>　<span class="z">${esc(d.item.zh)}</span>`;
+}
 function kill(d){
+  burst(d);
   removeDrop(d,"pop");
   rain.combo++;rain.kills++;
   const mult=1+Math.floor(rain.combo/5);
