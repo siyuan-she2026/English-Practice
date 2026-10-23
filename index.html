@@ -1,0 +1,652 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>每日英语词本</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<style>
+/* Layout: a single-column notebook — sticky tab bar, then one working surface per tab; the typing desk is the hero. */
+:root{
+  --bg:#f3f6f8;
+  --surface:#ffffff;
+  --ink:#14232e;
+  --muted:#5b6b77;
+  --line:#d7e0e6;
+  --accent:#0f6b6f;
+  --accent-ink:#ffffff;
+  --accent-soft:#dcefee;
+  --mark:#ffe36e;
+  --ok:#1f8a4c;
+  --ok-soft:#dff3e6;
+  --bad:#c23b2e;
+  --bad-soft:#fbe3df;
+  --f-display:"Bricolage Grotesque","Noto Sans SC",system-ui,sans-serif;
+  --f-body:"Atkinson Hyperlegible","Noto Sans SC",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e171d;--surface:#16222a;--ink:#e4edf2;--muted:#94a6b2;--line:#2a3a45;
+  --accent:#4fc1c0;--accent-ink:#06282a;--accent-soft:#163a3d;--mark:#7a6a12;
+  --ok:#5fd394;--ok-soft:#173a28;--bad:#ff8577;--bad-soft:#41201c;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e171d;--surface:#16222a;--ink:#e4edf2;--muted:#94a6b2;--line:#2a3a45;
+  --accent:#4fc1c0;--accent-ink:#06282a;--accent-soft:#163a3d;--mark:#7a6a12;
+  --ok:#5fd394;--ok-soft:#173a28;--bad:#ff8577;--bad-soft:#41201c;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.55}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.wrap{max-width:860px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding-block:12px}
+.brand{font-family:var(--f-display);font-weight:700;font-size:1.25rem;letter-spacing:-.01em;margin:0;display:flex;align-items:baseline;gap:8px}
+.brand small{font-family:var(--f-body);font-weight:400;font-size:.8rem;color:var(--muted)}
+nav.tabs{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
+nav.tabs button{border:0;background:transparent;padding:8px 12px;border-radius:999px;color:var(--muted);font-weight:700;font-size:.95rem}
+nav.tabs button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink)}
+
+.voicebar{display:flex;gap:12px 20px;align-items:center;flex-wrap:wrap;padding-block:12px;color:var(--muted);font-size:.9rem}
+.voicebar label{display:flex;align-items:center;gap:8px}
+.voicebar select{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:4px 8px}
+.voicebar input[type=range]{accent-color:var(--accent);width:110px}
+.voicebar output{font-family:var(--f-mono);font-variant-numeric:tabular-nums;color:var(--ink)}
+.warn{color:var(--bad)}
+
+main{padding-block:8px 64px}
+section[hidden]{display:none}
+h2{font-family:var(--f-display);font-weight:700;font-size:1.6rem;letter-spacing:-.015em;margin:8px 0 4px;text-wrap:balance}
+.lede{color:var(--muted);margin:0 0 20px;max-width:62ch}
+
+/* ---- Practice desk ---- */
+.desk{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:24px;display:grid;gap:20px}
+.desk-head{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:transparent;border-radius:999px;padding:5px 12px;font-size:.88rem;color:var(--muted)}
+.chip[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--ink);font-weight:700}
+.score{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:.85rem;color:var(--muted);display:flex;gap:14px}
+.score b{color:var(--ink)}
+
+.prompt{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.play{width:64px;height:64px;border-radius:50%;border:0;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;flex:none}
+.play svg{width:26px;height:26px}
+.play.slow{width:44px;height:44px;background:var(--accent-soft);color:var(--ink)}
+.play.slow svg{width:20px;height:20px}
+.meaning{min-width:0;flex:1}
+.meaning .zh{font-size:1.25rem;font-weight:700;font-family:"Noto Sans SC",var(--f-body)}
+.meaning .pos{font-family:var(--f-mono);font-size:.8rem;color:var(--muted)}
+.meaning .hidden-zh{color:var(--muted);font-size:.95rem}
+
+.typebox{position:relative;cursor:text;border-radius:12px;padding:18px 12px;background:var(--bg);border:2px dashed var(--line);min-height:96px;display:flex;align-items:center}
+.typebox.focus{border-style:solid;border-color:var(--accent)}
+.typebox.good{border-color:var(--ok);background:var(--ok-soft)}
+.typebox.badx{border-color:var(--bad);background:var(--bad-soft);animation:shake .3s}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+@media (prefers-reduced-motion:reduce){.typebox.badx{animation:none}}
+.slots{display:flex;flex-wrap:wrap;gap:12px 18px;font-family:var(--f-mono);font-weight:700;font-size:clamp(1.3rem,4.6vw,2rem)}
+.wordgrp{display:flex;gap:3px}
+.slot{width:1.05em;text-align:center;border-bottom:3px solid var(--line);line-height:1.35}
+.slot.cur{border-bottom-color:var(--accent);background:var(--mark);border-radius:3px 3px 0 0}
+.slot.ok{color:var(--ok);border-bottom-color:var(--ok)}
+.slot.no{color:var(--bad);border-bottom-color:var(--bad)}
+.slot.hint{color:var(--muted)}
+.slot.punct{border-bottom-color:transparent;color:var(--muted);width:.6em}
+#typer{position:absolute;inset:0;opacity:0;width:100%;height:100%;border:0;font-size:16px}
+
+.answer{font-family:var(--f-mono);font-size:1.05rem}
+.answer .lbl{font-family:var(--f-body);color:var(--muted);font-size:.85rem;margin-right:8px}
+.example{color:var(--muted);font-style:italic}
+.feedback{min-height:1.5em;font-weight:700}
+.feedback.ok{color:var(--ok)} .feedback.no{color:var(--bad)}
+
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 14px;font-weight:700;font-size:.92rem}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--muted)}
+.keys{margin-left:auto;color:var(--muted);font-size:.82rem;display:flex;gap:12px;flex-wrap:wrap}
+kbd{font-family:var(--f-mono);font-size:.78rem;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--surface);color:var(--ink)}
+
+/* ---- Lists ---- */
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.search{flex:1;min-width:180px;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 12px}
+.list{display:grid;gap:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.row{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:start;padding:14px 16px;border-top:1px solid var(--line)}
+.row:first-child{border-top:0}
+.row .mini{width:36px;height:36px;border-radius:50%;border:0;background:var(--accent-soft);color:var(--ink);display:grid;place-items:center}
+.row .mini svg{width:16px;height:16px}
+.row .txt{min-width:0}
+.en{font-weight:700;font-size:1.08rem;overflow-wrap:anywhere}
+.en .tag{font-family:var(--f-mono);font-weight:500;font-size:.75rem;color:var(--muted);margin-left:6px}
+.row .zh{font-family:"Noto Sans SC",var(--f-body)}
+.row .ex{color:var(--muted);font-size:.92rem;font-style:italic;border:0;background:none;padding:0;text-align:left;cursor:pointer}
+.row .ex:hover{color:var(--ink)}
+.row .side{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.badge{font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--bad-soft);color:var(--bad);white-space:nowrap}
+.badge.mine{background:var(--accent-soft);color:var(--accent)}
+.del{border:0;background:none;color:var(--muted);font-size:.8rem;text-decoration:underline}
+.cathead{font-family:var(--f-display);font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:10px 16px;background:var(--bg);border-top:1px solid var(--line)}
+.cathead:first-child{border-top:0}
+.empty{padding:28px 16px;color:var(--muted);text-align:center}
+
+/* ---- Add form ---- */
+.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+.formgrid label{display:grid;gap:4px;font-size:.88rem;color:var(--muted);font-weight:700;min-width:0}
+.formgrid input,.formgrid select,.formgrid textarea{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:8px 10px;color:var(--ink);font-weight:400;font-size:1rem;width:100%}
+.formgrid .full{grid-column:1/-1}
+.formgrid textarea{min-height:130px;font-family:var(--f-mono);font-size:.9rem}
+h3{font-family:var(--f-display);font-size:1.1rem;margin:28px 0 10px}
+.note{color:var(--muted);font-size:.88rem;margin:6px 0 0}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-weight:700;font-size:.92rem;z-index:20;max-width:calc(100% - 32px)}
+
+@media (max-width:600px){
+  .desk{padding:16px}
+  .formgrid{grid-template-columns:1fr}
+  .keys{display:none}
+  nav.tabs{margin-left:0;width:100%}
+  nav.tabs button{flex:1;padding:8px 6px}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <h1 class="brand">每日英语词本 <small>听 · 拼 · 记</small></h1>
+    <nav class="tabs" role="tablist">
+      <button role="tab" data-tab="practice" aria-selected="true">拼写练习</button>
+      <button role="tab" data-tab="words" aria-selected="false">单词</button>
+      <button role="tab" data-tab="phrases" aria-selected="false">短语</button>
+      <button role="tab" data-tab="mine" aria-selected="false">添加</button>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="voicebar">
+    <label>口音
+      <select id="accent">
+        <option value="en-GB">英音</option>
+        <option value="en-US">美音</option>
+      </select>
+    </label>
+    <label>语速 <input id="rate" type="range" min="0.5" max="1.3" step="0.05" value="0.9"> <output id="rateOut">0.90×</output></label>
+    <span id="voiceWarn" class="warn" hidden>这个浏览器不支持朗读，请换 Chrome、Edge 或 Safari。</span>
+  </div>
+</div>
+
+<main class="wrap">
+
+  <!-- PRACTICE -->
+  <section id="tab-practice">
+    <div class="desk">
+      <div class="desk-head">
+        <div class="seg" id="srcSeg" aria-label="练习内容">
+          <button class="chip" data-src="words" aria-pressed="true">单词</button>
+          <button class="chip" data-src="phrases" aria-pressed="false">短语</button>
+          <button class="chip" data-src="mine" aria-pressed="false">我加的</button>
+          <button class="chip" data-src="wrong" aria-pressed="false">错题本</button>
+        </div>
+        <div class="score">
+          <span>今日 <b id="sDone">0</b></span>
+          <span>正确率 <b id="sRate">–</b></span>
+          <span>剩余 <b id="sLeft">0</b></span>
+        </div>
+      </div>
+
+      <div class="prompt">
+        <button class="play" id="playBtn" aria-label="播放读音"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 9v6h4l5 4V5L8 9H4zm12.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg></button>
+        <button class="play slow" id="slowBtn" aria-label="慢速播放" title="慢速"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 6a8 8 0 0 0-8 8h2a6 6 0 0 1 12 0h2a8 8 0 0 0-8-8zm-1 4v5.3l4 2.4.8-1.3-3.3-2V10H11z"/></svg></button>
+        <div class="meaning" id="meaning"></div>
+        <label class="chip" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="showZh" checked> 显示中文</label>
+      </div>
+
+      <div class="typebox" id="typebox">
+        <div class="slots" id="slots" aria-hidden="true"></div>
+        <input id="typer" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="在这里输入你听到的英文">
+      </div>
+
+      <div class="feedback" id="feedback" aria-live="polite"></div>
+      <div id="reveal" hidden>
+        <div class="answer"><span class="lbl">正确拼写</span><span id="ansText"></span></div>
+        <div class="example" id="ansEx"></div>
+      </div>
+
+      <div class="actions">
+        <button class="btn primary" id="checkBtn">检查</button>
+        <button class="btn" id="hintBtn">提示一个字母</button>
+        <button class="btn ghost" id="skipBtn">跳过</button>
+        <div class="keys"><span><kbd>Enter</kbd> 检查 / 下一个</span><span><kbd>Esc</kbd> 重听</span><span><kbd>Tab</kbd> 提示</span></div>
+      </div>
+    </div>
+    <p class="note">点击上面的格子就能打字。拼错了会显示正确答案，要再正确打一遍才算过。错过的会自动进「错题本」。</p>
+  </section>
+
+  <!-- WORDS -->
+  <section id="tab-words" hidden>
+    <h2>单词</h2>
+    <p class="lede">点 ▶ 听读音，点例句听整句。拼写容易错的词都在这里，比如 receipt、Wednesday、accommodation。</p>
+    <div class="toolbar"><input class="search" id="qWords" type="search" placeholder="搜索英文或中文"></div>
+    <div class="list" id="listWords"></div>
+  </section>
+
+  <!-- PHRASES -->
+  <section id="tab-phrases" hidden>
+    <h2>日常短语</h2>
+    <p class="lede">生活里真正会用到的说法，按场景分组。</p>
+    <div class="toolbar"><input class="search" id="qPhrases" type="search" placeholder="搜索英文或中文"></div>
+    <div class="list" id="listPhrases"></div>
+  </section>
+
+  <!-- MINE -->
+  <section id="tab-mine" hidden>
+    <h2>添加自己的词</h2>
+    <p class="lede">加进来的单词和短语会出现在列表里，也能在「我加的」里练拼写。内容保存在这台设备的浏览器里。</p>
+    <form class="formgrid" id="addForm">
+      <label>英文<input id="fEn" required placeholder="e.g. reluctant"></label>
+      <label>中文意思<input id="fZh" required placeholder="不情愿的"></label>
+      <label>类型
+        <select id="fType"><option value="word">单词</option><option value="phrase">短语</option></select>
+      </label>
+      <label>词性 / 场景（可选）<input id="fTag" placeholder="adj. 或 工作"></label>
+      <label class="full">例句（可选）<input id="fEx" placeholder="She was reluctant to leave."></label>
+      <div class="full actions"><button class="btn primary" type="submit">添加</button></div>
+    </form>
+
+    <h3>批量导入</h3>
+    <form class="formgrid" id="bulkForm">
+      <label class="full">每行一条，用 | 分隔：英文 | 中文 | 例句（可选）
+        <textarea id="fBulk" placeholder="reluctant | 不情愿的 | She was reluctant to leave.
+I'm fed up with it. | 我受够了。"></textarea>
+      </label>
+      <label>类型
+        <select id="fBulkType"><option value="word">单词</option><option value="phrase">短语</option></select>
+      </label>
+      <div class="actions" style="align-self:end"><button class="btn primary" type="submit">导入</button><button class="btn" type="button" id="copyAll">复制我的词库</button></div>
+    </form>
+    <p class="note">换设备时：先在旧设备点「复制我的词库」，再粘贴到新设备的批量导入里。</p>
+
+    <h3>我加的词 <span id="mineCount" class="tag"></span></h3>
+    <div class="list" id="listMine"></div>
+  </section>
+</main>
+
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(function(){
+/* ---------- built-in data ---------- */
+const WORDS = [
+ ["appointment","n.","预约","I have a dentist appointment at three."],
+ ["available","adj.","有空的；可用的","Are you available on Friday afternoon?"],
+ ["borrow","v.","借（入）","Can I borrow your charger for a minute?"],
+ ["convenient","adj.","方便的","Is ten o'clock convenient for you?"],
+ ["delicious","adj.","美味的","This soup is absolutely delicious."],
+ ["exhausted","adj.","精疲力尽的","I'm exhausted after that long shift."],
+ ["forecast","n.","（天气）预报","The forecast says it will rain tomorrow."],
+ ["grocery","n.","食品杂货","I need to pick up some groceries."],
+ ["honest","adj.","诚实的","To be honest, I didn't like the film."],
+ ["improve","v.","提高；改善","I want to improve my English."],
+ ["journey","n.","旅程","How was your journey here?"],
+ ["knowledge","n.","知识","She has a lot of knowledge about wine."],
+ ["luggage","n.","行李","Please keep your luggage with you."],
+ ["necessary","adj.","必要的","Is it necessary to book in advance?"],
+ ["opportunity","n.","机会","This is a great opportunity for you."],
+ ["prescription","n.","处方","The doctor gave me a prescription."],
+ ["queue","n./v.","排队；队伍","There's a long queue at the post office."],
+ ["receipt","n.","收据","Could I have a receipt, please?"],
+ ["schedule","n.","日程表","My schedule is quite full this week."],
+ ["temperature","n.","温度；体温","The temperature dropped overnight."],
+ ["umbrella","n.","雨伞","Don't forget your umbrella."],
+ ["vegetable","n.","蔬菜","Try to eat more vegetables."],
+ ["Wednesday","n.","星期三","The meeting is on Wednesday morning."],
+ ["recommend","v.","推荐","Can you recommend a good restaurant?"],
+ ["definitely","adv.","肯定；一定","I'll definitely be there."],
+ ["embarrassed","adj.","尴尬的","I felt so embarrassed."],
+ ["accommodation","n.","住处；住宿","We still need to find accommodation."],
+ ["February","n.","二月","My birthday is in February."],
+ ["restaurant","n.","餐厅","Let's meet at the restaurant."],
+ ["neighbourhood","n.","街区；附近","It's a quiet neighbourhood."]
+];
+const PHRASES = [
+ ["日常","How's it going?","最近怎么样？"],
+ ["日常","I'm on my way.","我在路上了。"],
+ ["日常","No worries.","没事／不客气。"],
+ ["日常","Take your time.","慢慢来，不着急。"],
+ ["日常","It's up to you.","你来决定。"],
+ ["日常","Let me think about it.","让我想一想。"],
+ ["日常","I'm running late.","我要迟到了。"],
+ ["日常","Sounds good to me.","我觉得可以。"],
+ ["日常","Never mind.","算了／没关系。"],
+ ["日常","I'll keep that in mind.","我会记住的。"],
+ ["购物餐厅","Can I have the bill, please?","请帮我买单。"],
+ ["购物餐厅","I'm just looking, thanks.","我只是随便看看，谢谢。"],
+ ["购物餐厅","Could I pay by card?","可以刷卡吗？"],
+ ["购物餐厅","Is there a table for two?","有两个人的位子吗？"],
+ ["购物餐厅","Do you have this in a smaller size?","这个有小一号的吗？"],
+ ["出行","How do I get to the station?","去车站怎么走？"],
+ ["出行","Could you say that again, please?","能再说一遍吗？"],
+ ["出行","What time does it leave?","几点出发？"],
+ ["工作学习","Let's catch up later.","回头再聊。"],
+ ["工作学习","I'll get back to you.","我稍后回复你。"],
+ ["工作学习","Could you give me a hand?","能帮我一下吗？"]
+];
+
+/* ---------- storage (safe) ---------- */
+const store={
+  get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+};
+let custom=store.get("vb.custom",[]);
+let wrong=store.get("vb.wrong",{});
+let settings=Object.assign({accent:"en-GB",rate:0.9,showZh:true,src:"words"},store.get("vb.settings",{}));
+const today=new Date().toISOString().slice(0,10);
+let stats=store.get("vb.stats",{date:today,done:0,ok:0});
+if(stats.date!==today) stats={date:today,done:0,ok:0};
+
+function allItems(){
+  const w=WORDS.map((r,i)=>({id:"w"+i,type:"word",en:r[0],tag:r[1],zh:r[2],ex:r[3]}));
+  const p=PHRASES.map((r,i)=>({id:"p"+i,type:"phrase",tag:r[0],en:r[1],zh:r[2],ex:""}));
+  return w.concat(p,custom);
+}
+const byId=id=>allItems().find(x=>x.id===id);
+
+/* ---------- speech ---------- */
+const synth=window.speechSynthesis;
+let voices=[];
+function loadVoices(){voices=synth?synth.getVoices():[]}
+if(!synth){document.getElementById("voiceWarn").hidden=false}
+else{loadVoices();synth.onvoiceschanged=loadVoices}
+function pickVoice(lang){
+  const m=voices.filter(v=>v.lang&&v.lang.replace("_","-").toLowerCase().startsWith(lang.toLowerCase()));
+  return m.find(v=>/natural|google|siri|premium|enhanced/i.test(v.name))||m[0]||voices.find(v=>/^en/i.test(v.lang))||null;
+}
+function speak(text,slow){
+  if(!synth||!text)return;
+  synth.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang=settings.accent;
+  const v=pickVoice(settings.accent); if(v)u.voice=v;
+  u.rate=slow?Math.max(0.45,settings.rate*0.6):settings.rate;
+  synth.speak(u);
+}
+
+/* ---------- voice bar ---------- */
+const $=id=>document.getElementById(id);
+$("accent").value=settings.accent;
+$("rate").value=settings.rate;
+$("rateOut").textContent=Number(settings.rate).toFixed(2)+"×";
+$("accent").onchange=e=>{settings.accent=e.target.value;store.set("vb.settings",settings);speak("Hello there")};
+$("rate").oninput=e=>{settings.rate=+e.target.value;$("rateOut").textContent=settings.rate.toFixed(2)+"×";store.set("vb.settings",settings)};
+
+/* ---------- tabs ---------- */
+const tabs=[...document.querySelectorAll("nav.tabs button")];
+function showTab(name){
+  tabs.forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===name));
+  ["practice","words","phrases","mine"].forEach(t=>$("tab-"+t).hidden=t!==name);
+  if(name==="practice")focusTyper();
+  if(name==="words")renderWords();
+  if(name==="phrases")renderPhrases();
+  if(name==="mine")renderMine();
+}
+tabs.forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
+
+/* ---------- lists ---------- */
+const ICON='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+const esc=s=>String(s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function rowHTML(it,opts={}){
+  const wc=wrong[it.id];
+  return `<div class="row">
+    <button class="mini" data-say="${esc(it.en)}" aria-label="播放 ${esc(it.en)}">${ICON}</button>
+    <div class="txt">
+      <div class="en">${esc(it.en)}${it.type==="word"&&it.tag?`<span class="tag">${esc(it.tag)}</span>`:""}</div>
+      <div class="zh">${esc(it.zh)}</div>
+      ${it.ex?`<button class="ex" data-say="${esc(it.ex)}">${esc(it.ex)}</button>`:""}
+    </div>
+    <div class="side">
+      ${wc?`<span class="badge">错 ${wc} 次</span>`:""}
+      ${it.id.startsWith("c")?`<span class="badge mine">我加的</span>`:""}
+      ${opts.del?`<button class="del" data-del="${it.id}">删除</button>`:""}
+    </div></div>`;
+}
+const match=(it,q)=>!q||it.en.toLowerCase().includes(q)||it.zh.includes(q);
+function renderWords(){
+  const q=$("qWords").value.trim().toLowerCase();
+  const items=allItems().filter(i=>i.type==="word"&&match(i,q));
+  $("listWords").innerHTML=items.length?items.map(i=>rowHTML(i)).join(""):`<div class="empty">没有找到「${esc(q)}」</div>`;
+}
+function renderPhrases(){
+  const q=$("qPhrases").value.trim().toLowerCase();
+  const items=allItems().filter(i=>i.type==="phrase"&&match(i,q));
+  const groups={};
+  items.forEach(i=>{const g=i.id.startsWith("c")?(i.tag||"我加的"):i.tag;(groups[g]=groups[g]||[]).push(i)});
+  const html=Object.keys(groups).map(g=>`<div class="cathead">${esc(g)}</div>`+groups[g].map(i=>rowHTML(i)).join("")).join("");
+  $("listPhrases").innerHTML=html||`<div class="empty">没有找到「${esc(q)}」</div>`;
+}
+function renderMine(){
+  $("mineCount").textContent=custom.length?`（${custom.length}）`:"";
+  $("listMine").innerHTML=custom.length?custom.slice().reverse().map(i=>rowHTML(i,{del:true})).join(""):`<div class="empty">还没有添加。用上面的表格加第一个词吧。</div>`;
+}
+$("qWords").oninput=renderWords;
+$("qPhrases").oninput=renderPhrases;
+document.addEventListener("click",e=>{
+  const s=e.target.closest("[data-say]"); if(s){speak(s.dataset.say);return}
+  const d=e.target.closest("[data-del]");
+  if(d){
+    if(d.dataset.armed){custom=custom.filter(c=>c.id!==d.dataset.del);delete wrong[d.dataset.del];store.set("vb.custom",custom);store.set("vb.wrong",wrong);renderMine();toast("已删除")}
+    else{d.dataset.armed="1";d.textContent="再点一次确认删除";setTimeout(()=>{if(d.isConnected){delete d.dataset.armed;d.textContent="删除"}},3000)}
+  }
+});
+
+/* ---------- add / import ---------- */
+function addItem(en,zh,type,tag,ex){
+  en=en.trim();zh=zh.trim(); if(!en||!zh)return false;
+  if(allItems().some(i=>i.en.toLowerCase()===en.toLowerCase()))return false;
+  custom.push({id:"c"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),type,en,zh,tag:(tag||"").trim(),ex:(ex||"").trim()});
+  return true;
+}
+$("addForm").onsubmit=e=>{
+  e.preventDefault();
+  const ok=addItem($("fEn").value,$("fZh").value,$("fType").value,$("fTag").value,$("fEx").value);
+  if(ok){store.set("vb.custom",custom);["fEn","fZh","fTag","fEx"].forEach(id=>$(id).value="");renderMine();toast("已添加");$("fEn").focus()}
+  else toast("这个词已经在词库里了，或者英文/中文没填");
+};
+$("bulkForm").onsubmit=e=>{
+  e.preventDefault();
+  let n=0,skip=0;
+  $("fBulk").value.split("\n").forEach(line=>{
+    if(!line.trim())return;
+    const [en,zh,ex]=line.split("|");
+    if(addItem(en||"",zh||"",$("fBulkType").value,"",ex||""))n++;else skip++;
+  });
+  store.set("vb.custom",custom);renderMine();
+  if(n)$("fBulk").value="";
+  toast(`导入了 ${n} 条`+(skip?`，跳过 ${skip} 条（重复或格式不对）`:""));
+};
+$("copyAll").onclick=()=>{
+  const text=custom.map(c=>[c.en,c.zh,c.ex].filter((x,i)=>i<2||x).join(" | ")).join("\n");
+  if(!text){toast("词库是空的");return}
+  const fallback=()=>{$("fBulk").value=text;$("fBulk").select();toast("已放进下面的输入框，按 Ctrl+C 复制")};
+  try{navigator.clipboard.writeText(text).then(()=>toast(`已复制 ${custom.length} 条`),fallback)}catch(err){fallback()}
+};
+
+/* ---------- toast ---------- */
+let tt;
+function toast(msg){const t=$("toast");t.textContent=msg;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>t.hidden=true,2400)}
+
+/* ---------- practice ---------- */
+const normalize=s=>s.replace(/[’‘]/g,"'").toLowerCase();
+const isTyped=c=>/[a-z0-9' ]/i.test(c);
+let queue=[],cur=null,target="",typedLen=0,mode="type",hintMask=new Set(),missedThis=false;
+
+function pool(src){
+  const all=allItems();
+  if(src==="words")return all.filter(i=>i.type==="word"&&!i.id.startsWith("c"));
+  if(src==="phrases")return all.filter(i=>i.type==="phrase"&&!i.id.startsWith("c"));
+  if(src==="mine")return all.filter(i=>i.id.startsWith("c"));
+  return all.filter(i=>wrong[i.id]);
+}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function buildQueue(){queue=shuffle(pool(settings.src).map(i=>i.id))}
+
+function setSrc(src){
+  settings.src=src;store.set("vb.settings",settings);
+  document.querySelectorAll("#srcSeg .chip").forEach(c=>c.setAttribute("aria-pressed",c.dataset.src===src));
+  buildQueue();next();
+}
+document.querySelectorAll("#srcSeg .chip").forEach(c=>c.onclick=()=>setSrc(c.dataset.src));
+$("showZh").checked=settings.showZh;
+$("showZh").onchange=e=>{settings.showZh=e.target.checked;store.set("vb.settings",settings);renderMeaning();focusTyper()};
+
+function renderMeaning(){
+  if(!cur){$("meaning").innerHTML="";return}
+  $("meaning").innerHTML=settings.showZh
+    ? `<div class="zh">${esc(cur.zh)}</div><div class="pos">${cur.type==="word"?esc(cur.tag||"单词"):"短语 · "+esc(cur.tag||"")}</div>`
+    : `<div class="hidden-zh">只听读音拼写 · ${cur.type==="word"?"单词":"短语"}</div>`;
+}
+
+function next(){
+  $("reveal").hidden=true;$("feedback").textContent="";$("feedback").className="feedback";
+  $("typebox").classList.remove("good","badx");
+  if(!queue.length){
+    cur=null;
+    const msg={wrong:"错题本是空的，干得好！",mine:"还没有自己加的词，去「添加」页加几个吧。"}[settings.src]||"这一轮练完了！点「跳过」再来一轮。";
+    if(!pool(settings.src).length){$("slots").innerHTML=`<span style="font-family:var(--f-body);font-size:1rem;font-weight:400;color:var(--muted)">${msg}</span>`;renderMeaning();updateScore();return}
+    buildQueue();toast("新一轮开始");
+  }
+  cur=byId(queue.shift());
+  if(!cur){next();return}
+  target=normalize(cur.en);
+  mode="type";hintMask=new Set();missedThis=false;
+  $("typer").value="";$("checkBtn").textContent="检查";
+  renderMeaning();renderSlots();updateScore();
+  setTimeout(()=>speak(cur.en),150);
+  focusTyper();
+}
+
+// what the user must type: letters, digits, apostrophes, spaces. Punctuation is shown, not typed.
+function typedTarget(){return [...target].filter(isTyped).join("")}
+
+function renderSlots(){
+  if(!cur)return;
+  const val=normalize($("typer").value);
+  const tt=typedTarget();
+  let ti=0,html="",grp="";
+  const flush=()=>{if(grp){html+=`<span class="wordgrp">${grp}</span>`;grp=""}};
+  for(const ch of [...cur.en]){
+    const n=normalize(ch);
+    if(!isTyped(n)){grp+=`<span class="slot punct">${esc(ch)}</span>`;continue}
+    if(n===" "){ti++;flush();continue}
+    const typed=val[ti];
+    let cls="slot",show="&nbsp;";
+    if(mode==="reveal-retype"&&typed===undefined){show=`<span style="opacity:.28">${esc(ch)}</span>`}
+    if(typed!==undefined){show=esc(typed===" "?"·":typed);cls+=typed===n?" ok":" no"}
+    else if(hintMask.has(ti)){show=esc(ch);cls+=" hint"}
+    if(ti===val.length)cls+=" cur";
+    grp+=`<span class="${cls}">${show}</span>`;
+    ti++;
+  }
+  flush();
+  $("slots").innerHTML=html;
+}
+
+function focusTyper(){if(!$("tab-practice").hidden)setTimeout(()=>$("typer").focus({preventScroll:true}),0)}
+$("typebox").onclick=focusTyper;
+$("typer").onfocus=()=>$("typebox").classList.add("focus");
+$("typer").onblur=()=>$("typebox").classList.remove("focus");
+$("typer").oninput=()=>{
+  const tt=typedTarget();
+  let v=$("typer").value.replace(/[’‘]/g,"'");
+  v=[...v].filter(c=>isTyped(c)).join("");
+  if(v.length>tt.length)v=v.slice(0,tt.length);
+  $("typer").value=v;
+  $("typebox").classList.remove("badx","good");
+  renderSlots();
+};
+$("typer").onkeydown=e=>{
+  if(e.key==="Enter"){e.preventDefault();check()}
+  else if(e.key==="Escape"){e.preventDefault();cur&&speak(cur.en)}
+  else if(e.key==="Tab"){e.preventDefault();hint()}
+};
+
+function hint(){
+  if(!cur||mode==="done")return;
+  const tt=typedTarget(),val=normalize($("typer").value);
+  // keep the correct prefix, then add the next correct letter
+  let i=0;while(i<val.length&&val[i]===tt[i])i++;
+  let add=tt.slice(0,i+1);
+  if(tt[i]===" ")add=tt.slice(0,i+2);
+  $("typer").value=add;hintMask.add(i);missedThis=true;
+  renderSlots();focusTyper();
+}
+
+function record(ok){
+  stats.done++;if(ok)stats.ok++;store.set("vb.stats",stats);
+  if(ok){ if(wrong[cur.id]&&!missedThis){wrong[cur.id]--; if(wrong[cur.id]<=0)delete wrong[cur.id]} }
+  else wrong[cur.id]=(wrong[cur.id]||0)+1;
+  store.set("vb.wrong",wrong);updateScore();
+}
+
+function check(){
+  if(!cur){next();return}
+  if(mode==="done"){next();return}
+  const val=normalize($("typer").value).trim(),tt=typedTarget();
+  const fb=$("feedback");
+  if(val===tt){
+    $("typebox").classList.add("good");
+    if(mode==="type"){
+      record(!missedThis);
+      fb.textContent=missedThis?"拼对了（用了提示）":"完全正确！";
+    }else fb.textContent="这次对了，记住它。";
+    fb.className="feedback ok";
+    showAnswer();mode="done";$("checkBtn").textContent="下一个";
+    if(cur.ex)setTimeout(()=>speak(cur.ex),500);
+    return;
+  }
+  $("typebox").classList.remove("badx");void $("typebox").offsetWidth;$("typebox").classList.add("badx");
+  if(mode==="type"){
+    if(!missedThis)record(false);
+    missedThis=true;
+    mode="reveal-retype";
+    fb.textContent="拼错了。看一下正确答案，再完整打一遍。";fb.className="feedback no";
+    showAnswer();$("typer").value="";renderSlots();speak(cur.en,true);
+  }else{
+    fb.textContent="还不对，照着淡色的字母再打一遍。";fb.className="feedback no";
+  }
+  focusTyper();
+}
+function showAnswer(){$("ansText").textContent=cur.en;$("ansEx").textContent=cur.ex||"";$("reveal").hidden=false}
+
+$("checkBtn").onclick=()=>{check();focusTyper()};
+$("hintBtn").onclick=hint;
+$("skipBtn").onclick=()=>next();
+$("playBtn").onclick=()=>{cur&&speak(cur.en);focusTyper()};
+$("slowBtn").onclick=()=>{cur&&speak(cur.en,true);focusTyper()};
+
+function updateScore(){
+  $("sDone").textContent=stats.done;
+  $("sRate").textContent=stats.done?Math.round(stats.ok/stats.done*100)+"%":"–";
+  $("sLeft").textContent=queue.length+(cur?1:0);
+}
+
+/* ---------- boot ---------- */
+document.querySelectorAll("#srcSeg .chip").forEach(c=>c.setAttribute("aria-pressed",c.dataset.src===settings.src));
+buildQueue();
+// first item without auto-speaking (browsers need a click before audio)
+(function first(){
+  if(!queue.length){next();return}
+  cur=byId(queue.shift());target=normalize(cur.en);
+  renderMeaning();renderSlots();updateScore();
+  $("feedback").textContent="点 ▶ 听读音，然后开始打字。";$("feedback").className="feedback";
+})();
+})();
+</script>
+</body>
+</html>
