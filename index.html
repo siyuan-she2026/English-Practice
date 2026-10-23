@@ -849,7 +849,7 @@ const DAYS=[
 "reception|n.|前台|Please sign in at reception.",
 "follow up|phr. v.|跟进|I'll follow up with an email.",
 "handle|v.|处理|Can you handle this one?",
-"sort out|phr. v.|解决；处理好|Don't worry, I'll sort it out.",
+"sort out|phr. v.|解决；处理好|Don't worry, I'll sort out the tickets.",
 "in charge of|phr.|负责|Who's in charge of this project?",
 "client|n.|客户|I'm meeting a client this afternoon.",
 "pension|n.|养老金|I pay into a workplace pension.",
@@ -1115,7 +1115,7 @@ const DAYS=[
 "refund|n.|退款|I'd like a refund, please.",
 "exchange|n./v.|换货|Can I exchange this for a bigger size?",
 "faulty|adj.|有毛病的|This kettle is faulty.",
-"try on|phr. v.|试穿|Can I try this on?",
+"try on|phr. v.|试穿|Could I try on the blue one?",
 "fitting room|n.|试衣间|Where are the fitting rooms?",
 "size|n.|尺码|What size are you?",
 "suit|v.|适合|That colour really suits you.",
@@ -1124,7 +1124,7 @@ const DAYS=[
 "self-checkout|n.|自助收银|I always use the self-checkout.",
 "loyalty card|n.|会员卡|Have you got a loyalty card?",
 "bag for life|n.|（英国）可重复用的购物袋|I forgot my bag for life.",
-"online shopping|n.|网购|I do most of my shopping online.",
+"online shopping|n.|网购|I do most of my online shopping at night.",
 "delivery|n.|送货|Is delivery free?",
 "out of stock|phr.|缺货|Sorry, it's out of stock.",
 "brand|n.|品牌|What brand is it?",
@@ -1867,21 +1867,41 @@ function rainOver(){
 const STOP=new Set("the a an to of in on at for and but or is are was were be it i you he she we they my your his her our their this that these those with have has had do does did can could would should will there here what when where how about from by me him them us not no yes so just very let let's".split(" "));
 const cz={q:[],i:0,ok:0,res:[],state:"ask",cur:null};
 seg("clozeSrcSeg","clozeSrc",clozeStart);
+// does a sentence token match one word of the target? short words must match exactly, longer ones may be inflected
+function tokMatch(t,w,lead){
+  t=t.toLowerCase().replace(/['’].*/,"");w=w.toLowerCase();
+  if(t===w)return true;
+  if(lead&&w.length>=2&&t.startsWith(w)&&t.length-w.length<=4)return true;
+  if(w.length<=3)return false;
+  const stem=w.endsWith("e")?w.slice(0,-1):w;
+  if(stem.length>=3&&t.startsWith(stem)&&t.length-stem.length<=4)return true;
+  let k=0;while(k<t.length&&k<w.length&&t[k]===w[k])k++;
+  return k>=4&&k>=Math.min(t.length,w.length)-2;
+}
 function makeCloze(item){
   const text=item.type==="phrase"?item.en:item.ex;if(!text)return null;
   const parts=text.split(/(\s+)/),cands=[];
   parts.forEach((p,i)=>{const m=p.match(/^([^A-Za-z']*)([A-Za-z][A-Za-z'’&-]*[A-Za-z]|[A-Za-z])([^A-Za-z']*)$/);if(m)cands.push({i,pre:m[1],core:m[2],post:m[3]})});
   let pick=null;
   if(item.type!=="phrase"){
-    const w=item.en.toLowerCase().split(" ")[0];
-    const stem=w.length>3&&w.endsWith("e")?w.slice(0,-1):w;
-    pick=cands.find(c=>{const t=c.core.toLowerCase().replace(/['’].*/,"");let k=0;while(k<t.length&&k<w.length&&t[k]===w[k])k++;
-      return t===w||(stem.length>=3&&t.startsWith(stem)&&t.length-stem.length<=4)||(k>=4&&k>=Math.min(t.length,w.length)-2)});
+    const ws=item.en.split(" ");
+    // find the whole word or phrase as consecutive tokens with no punctuation inside
+    for(let a=0;a+ws.length<=cands.length&&!pick;a++){
+      const run=cands.slice(a,a+ws.length);
+      const ok=run.every((c,k)=>tokMatch(c.core,ws[k],k===0)&&(k===0||(c.i===run[k-1].i+2&&!c.pre&&!run[k-1].post)));
+      if(ok){
+        const first=run[0],last=run[run.length-1];
+        let core=parts.slice(first.i,last.i+1).join("");
+        core=core.slice(first.pre.length,core.length-last.post.length);
+        pick={i:first.i,end:last.i,pre:first.pre,core,post:last.post,words:ws.length};
+      }
+    }
   }
   if(!pick){
     const good=cands.filter(c=>c.core.length>=3&&!STOP.has(c.core.toLowerCase().replace(/['’].*/,"")));
     const arr=good.length?good:cands;if(!arr.length)return null;
-    pick=arr[Math.floor(Math.random()*arr.length)];
+    const c=arr[Math.floor(Math.random()*arr.length)];
+    pick={i:c.i,end:c.i,pre:c.pre,core:c.core,post:c.post,words:1};
   }
   return {item,text,parts,pick};
 }
@@ -1902,7 +1922,9 @@ function clozeStart(){
 }
 function clozeHint(open){
   const c=cz.cur;if(!c)return;
-  const label=c.item.type==="word"?"空里的词":"整句意思";
+  const n=c.pick.words,tag=c.item.tag||"";
+  const kind=/phr\. v\./.test(tag)?"动词短语":"短语";
+  const label=c.item.type!=="word"?"整句意思":n>1?"空里是一个"+kind+"（"+n+" 个词）":"空里的词";
   if(open){$("cHint").innerHTML=`${label}：<b>${esc(c.item.zh)}</b>`;return}
   $("cHint").innerHTML=`<button class="peek" id="cPeek" aria-label="点击查看中文意思">${label}<span class="mask"></span> 点击查看</button>`;
   $("cPeek").onclick=()=>{clozeHint(true);try{$("cIn").focus({preventScroll:true})}catch(e){}};
@@ -1911,7 +1933,7 @@ function clozeShow(){
   const c=cz.cur=cz.q[cz.i];cz.state="ask";cz.tries=0;
   $("cIdx").textContent=cz.i+1;$("cOk").textContent=cz.ok;
   $("cDots").innerHTML=cz.q.map((_,k)=>`<i class="${cz.res[k]===true?"ok":cz.res[k]===false?"no":""} ${k===cz.i?"cur":""}"></i>`).join("");
-  $("cSentence").innerHTML=c.parts.map((p,k)=>k===c.pick.i?`${esc(c.pick.pre)}<input class="blank" id="cIn" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="填空" style="width:${c.pick.core.length+2}ch">${esc(c.pick.post)}`:tok(p)).join("");
+  $("cSentence").innerHTML=c.parts.map((p,k)=>k>c.pick.i&&k<=c.pick.end?"":k===c.pick.i?`${esc(c.pick.pre)}<input class="blank" id="cIn" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="填空" style="width:${c.pick.core.length+2}ch">${esc(c.pick.post)}`:tok(p)).join("");
   $("cSentence").dataset.ctx=c.text;
   clozeHint();
   $("cFeedback").textContent="";$("cFeedback").className="feedback";$("cCheck").textContent="检查";
