@@ -403,7 +403,7 @@ h3.sub{font-family:var(--f-display);font-size:1.1rem;margin:28px 0 10px}
         <div class="score">
           <span>今日拼写 <b id="sDone">0</b></span>
           <span>正确率 <b id="sRate">–</b></span>
-          <span>剩余 <b id="sLeft">0</b></span>
+          <span>本组剩余 <b id="sLeft">0</b></span>
         </div>
       </div>
       <div class="prompt">
@@ -2332,8 +2332,16 @@ function checkBadges(){
   BADGES.forEach(b=>{if(!badges[b.id]&&b.t()){badges[b.id]=today;toast("解锁成就：「"+b.name+"」",true)}});
   saveProg();renderProgress();
 }
-function addPoint(){
-  days[today]=(days[today]||0)+1;counters.total++;
+// the daily goal counts each word/phrase once per day, however many times it is answered
+let todaySet=store.get("vb.todayset",{date:today,ids:{}});
+if(todaySet.date!==today)todaySet={date:today,ids:{}};
+function addPoint(id){
+  counters.total++;
+  if(id){
+    if(todaySet.ids[id]){checkBadges();return}
+    todaySet.ids[id]=1;store.set("vb.todayset",todaySet);
+  }
+  days[today]=(days[today]||0)+1;
   if(days[today]===settings.goal){counters.goalDays++;toast("今日目标 "+settings.goal+" 个完成！",true)}
   checkBadges();
 }
@@ -2515,8 +2523,19 @@ function pool(src){
   if(src==="mine")return all.filter(isMine);
   return all.filter(i=>wrong[i.id]);
 }
+let doneSets=store.get("vb.done",{});
+const doneKey=(mode,src)=>mode+"|"+src+((src==="today"||src==="todayP")?"|d"+curDay():"");
+function doneHas(k,id){return !!(doneSets[k]&&doneSets[k][id])}
+function markDone(k,id){if(!id)return;(doneSets[k]=doneSets[k]||{})[id]=1;store.set("vb.done",doneSets)}
+function resetDone(k){delete doneSets[k];store.set("vb.done",doneSets)}
 let history=[];
-function buildQueue(){queue=shuffle(pool(settings.src).map(i=>i.id));history=[]}
+function buildQueue(){
+  const k=doneKey("spell",settings.src);
+  const all=pool(settings.src).map(i=>i.id);
+  let left=all.filter(id=>!doneHas(k,id));
+  if(!left.length&&all.length){resetDone(k);left=all}
+  queue=shuffle(left);history=[];
+}
 const srcBtns=[...document.querySelectorAll("#srcSeg .chip")];
 srcBtns.forEach(c=>c.onclick=()=>{settings.src=c.dataset.src;saveSettings();srcBtns.forEach(b=>b.setAttribute("aria-pressed",b===c));buildQueue();next()});
 srcBtns.forEach(b=>b.setAttribute("aria-pressed",b.dataset.src===settings.src));
@@ -2539,7 +2558,7 @@ function next(){
       $("slots").innerHTML=`<span style="font-family:var(--f-body);font-size:1rem;font-weight:400;color:var(--muted)">${msg}</span>`;
       renderMeaning();updateScore();return;
     }
-    buildQueue();if(cur)toast("新一轮开始");
+    buildQueue();if(cur)toast("这一组都练完了，新一轮开始");
   }
   cur=byId(queue.shift());if(!cur){next();return}
   history.push(cur.id);if(history.length>200)history.shift();
@@ -2611,7 +2630,7 @@ function hint(){
 }
 function record(ok){
   stats.done++;if(ok)stats.ok++;store.set("vb.stats",stats);
-  if(ok){if(!missedThis)fixWrong(cur.id);addPoint()}
+  if(ok){if(!missedThis)fixWrong(cur.id);addPoint(cur.id)}
   else addWrong(cur.id);
   updateScore();
 }
@@ -2623,6 +2642,7 @@ function check(){
     if(mode==="type"){record(!missedThis);fb.textContent=missedThis?"拼对了（用了提示）":"完全正确！"}
     else fb.textContent="这次对了，记住它。";
     fb.className="feedback ok";showAnswer();mode="done";$("checkBtn").textContent="下一个";
+    markDone(doneKey("spell",settings.src),cur.id);updateScore();
     if(cur.ex)setTimeout(()=>speak(cur.ex),500);
     return;
   }
@@ -2648,7 +2668,7 @@ $("slowBtn").onclick=()=>{cur&&speak(cur.en,true);focusTyper()};
 function updateScore(){
   $("sDone").textContent=stats.done;
   $("sRate").textContent=stats.done?Math.round(stats.ok/stats.done*100)+"%":"–";
-  $("sLeft").textContent=queue.length+(cur?1:0);
+  $("sLeft").textContent=(queue.length+(cur&&mode!=="done"?1:0))+"/"+pool(settings.src).length;
 }
 
 /* ================= word rain ================= */
@@ -2767,7 +2787,7 @@ function kill(d){
   if(rain.combo>counters.maxCombo)counters.maxCombo=rain.combo;
   if(settings.rainSrc==="wrong")fixWrong(d.item.id);
   if(settings.rainSound)speak(d.item.en);
-  addPoint();hud();
+  addPoint(d.item.id);hud();
 }
 function paintLocks(v){
   rain.drops.forEach(d=>{
@@ -2858,7 +2878,10 @@ function clozePool(){
   return all.filter(i=>(i.type==="phrase"||i.ex)&&((s==="today"&&inToday(i))||(s==="review"&&learned(i))||(s==="fav"&&isFav(i.id))||(s==="wrong"&&wrong[i.id])||(s==="mine"&&isMine(i))));
 }
 function clozeStart(){
-  const p=shuffle(clozePool()).slice(0,10).map(makeCloze).filter(Boolean);
+  const k=doneKey("cloze",settings.clozeSrc),poolAll=clozePool();
+  let left=poolAll.filter(i=>!doneHas(k,i.id));
+  if(!left.length&&poolAll.length){resetDone(k);left=poolAll;if(cz.q.length)toast("这一组句子都做完了，新一轮开始")}
+  const p=shuffle(left).slice(0,10).map(makeCloze).filter(Boolean);
   Object.assign(cz,{q:p,i:0,ok:0,res:[],fin:[],state:"ask"});
   $("cTot").textContent=p.length||0;
   if(!p.length){
@@ -2931,9 +2954,10 @@ function clozeCheck(reveal){
   if(!v){inp.focus();return}
   if(v===ans){
     cz.state="done";inp.readOnly=true;inp.classList.remove("no");inp.classList.add("ok");inp.value=c.pick.core;clozeRevealHints();
+    markDone(doneKey("cloze",settings.clozeSrc),c.item.id);
     if(cz.res[cz.i]===undefined){
       cz.ok++;cz.res[cz.i]=true;
-      fb.textContent="答对了！";counters.clozeOk++;fixWrong(c.item.id);addPoint();
+      fb.textContent="答对了！";counters.clozeOk++;fixWrong(c.item.id);addPoint(c.item.id);
     }else fb.textContent="这次对了，记住它。";
     fb.className="feedback ok";speak(c.text);
     $("cOk").textContent=cz.ok;paintDots();
@@ -3022,7 +3046,7 @@ function runTurn(){
   }
 }
 function answered(right,delay){
-  addPoint();
+  addPoint("talk:"+talk.scene.id+":"+talk.turn);
   setTimeout(()=>{
     $("talkInput").innerHTML="";
     bubble("me",right[0],right[3]);speak(right[0]);
