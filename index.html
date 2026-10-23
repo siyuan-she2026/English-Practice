@@ -274,6 +274,7 @@ h3.sub{font-family:var(--f-display);font-size:1.1rem;margin:28px 0 10px}
 
 <div class="wrap">
   <div class="bar2">
+    <label class="daypick">进度 <select id="daySel" class="sm" aria-label="选择学习第几天"></select></label>
     <label>口音
       <select id="accent" class="sm">
         <option value="en-GB">英音</option>
@@ -291,7 +292,7 @@ h3.sub{font-family:var(--f-display);font-size:1.1rem;margin:28px 0 10px}
   <div class="badgepanel" id="badgePanel" hidden>
     <div class="bp-head">
       <label>每日目标
-        <select id="goalSel" class="sm"><option>10</option><option>20</option><option>30</option><option>50</option></select> 个
+        <select id="goalSel" class="sm"><option>20</option><option>50</option><option>70</option><option>100</option><option>150</option></select> 个
       </label>
       <span>拼写、填空、对话答对一次，单词雨消掉一个词，都算 1 个。每天至少完成 1 个，连续天数才会累加。</span>
     </div>
@@ -306,8 +307,9 @@ h3.sub{font-family:var(--f-display);font-size:1.1rem;margin:28px 0 10px}
     <div class="desk">
       <div class="desk-head">
         <div class="seg" id="srcSeg" aria-label="练习内容">
-          <button class="chip" data-src="words" aria-pressed="true">单词</button>
-          <button class="chip" data-src="phrases" aria-pressed="false">短语</button>
+          <button class="chip" data-src="today" aria-pressed="true">今日单词</button>
+          <button class="chip" data-src="todayP" aria-pressed="false">今日短语</button>
+          <button class="chip" data-src="review" aria-pressed="false">已学复习</button>
           <button class="chip" data-src="mine" aria-pressed="false">我加的</button>
           <button class="chip" data-src="wrong" aria-pressed="false">错题本</button>
         </div>
@@ -351,7 +353,8 @@ h3.sub{font-family:var(--f-display);font-size:1.1rem;margin:28px 0 10px}
           <button class="chip" data-v="zh">看中文打英文</button>
         </div>
         <div class="seg" id="rainSrcSeg" aria-label="词源">
-          <button class="chip" data-v="words">单词</button>
+          <button class="chip" data-v="today">今日单词</button>
+          <button class="chip" data-v="review">已学单词</button>
           <button class="chip" data-v="mine">我加的</button>
           <button class="chip" data-v="wrong">错题本</button>
         </div>
@@ -377,9 +380,8 @@ h3.sub{font-family:var(--f-display);font-size:1.1rem;margin:28px 0 10px}
     <div class="desk">
       <div class="desk-head">
         <div class="seg" id="clozeSrcSeg" aria-label="题目来源">
-          <button class="chip" data-v="all">全部</button>
-          <button class="chip" data-v="words">单词例句</button>
-          <button class="chip" data-v="phrases">短语</button>
+          <button class="chip" data-v="today">今日</button>
+          <button class="chip" data-v="review">已学复习</button>
           <button class="chip" data-v="mine">我加的</button>
         </div>
         <div class="score"><span>第 <b id="cIdx">1</b>/<b id="cTot">10</b> 题</span><span>答对 <b id="cOk">0</b></span></div>
@@ -423,8 +425,8 @@ h3.sub{font-family:var(--f-display);font-size:1.1rem;margin:28px 0 10px}
 
   <!-- LIBRARY -->
   <section id="tab-library" hidden>
-    <h2>词库</h2>
-    <p class="lede">点 ▶ 听读音，点例句听整句。</p>
+    <h2 id="libTitle">词库</h2>
+    <p class="lede" id="libLede"></p>
     <div class="toolbar">
       <div class="seg" id="libSeg">
         <button class="chip" data-v="words" aria-pressed="true">单词</button>
@@ -472,60 +474,737 @@ I'm fed up with it. | 我受够了。"></textarea>
 (function(){
 "use strict";
 /* ================= data ================= */
-const WORDS=[
- ["appointment","n.","预约","I have a dentist appointment at three."],
- ["available","adj.","有空的；可用的","Are you available on Friday afternoon?"],
- ["borrow","v.","借（入）","Can I borrow your charger for a minute?"],
- ["convenient","adj.","方便的","Is ten o'clock convenient for you?"],
- ["delicious","adj.","美味的","This soup is absolutely delicious."],
- ["exhausted","adj.","精疲力尽的","I'm exhausted after that long shift."],
- ["forecast","n.","（天气）预报","The forecast says it will rain tomorrow."],
- ["grocery","n.","食品杂货","I need to pick up some groceries."],
- ["honest","adj.","诚实的","To be honest, I didn't like the film."],
- ["improve","v.","提高；改善","I want to improve my English."],
- ["journey","n.","旅程","How was your journey here?"],
- ["knowledge","n.","知识","She has a lot of knowledge about wine."],
- ["luggage","n.","行李","Please keep your luggage with you."],
- ["necessary","adj.","必要的","Is it necessary to book in advance?"],
- ["opportunity","n.","机会","This is a great opportunity for you."],
- ["prescription","n.","处方","The doctor gave me a prescription."],
- ["queue","n./v.","排队；队伍","There's a long queue at the post office."],
- ["receipt","n.","收据","Could I have a receipt, please?"],
- ["schedule","n.","日程表","My schedule is quite full this week."],
- ["temperature","n.","温度；体温","The temperature dropped overnight."],
- ["umbrella","n.","雨伞","Don't forget your umbrella."],
- ["vegetable","n.","蔬菜","Try to eat more vegetables."],
- ["Wednesday","n.","星期三","The meeting is on Wednesday morning."],
- ["recommend","v.","推荐","Can you recommend a good restaurant?"],
- ["definitely","adv.","肯定；一定","I'll definitely be there."],
- ["embarrassed","adj.","尴尬的","I felt so embarrassed."],
- ["accommodation","n.","住处；住宿","We still need to find accommodation."],
- ["February","n.","二月","My birthday is in February."],
- ["restaurant","n.","餐厅","Let's meet at the restaurant."],
- ["neighbourhood","n.","街区；附近","It's a quiet neighbourhood."]
-];
-const PHRASES=[
- ["日常","How's it going?","最近怎么样？"],
- ["日常","I'm on my way.","我在路上了。"],
- ["日常","No worries.","没事／不客气。"],
- ["日常","Take your time.","慢慢来，不着急。"],
- ["日常","It's up to you.","你来决定。"],
- ["日常","Let me think about it.","让我想一想。"],
- ["日常","I'm running late.","我要迟到了。"],
- ["日常","Sounds good to me.","我觉得可以。"],
- ["日常","Never mind.","算了／没关系。"],
- ["日常","I'll keep that in mind.","我会记住的。"],
- ["购物餐厅","Can I have the bill, please?","请帮我买单。"],
- ["购物餐厅","I'm just looking, thanks.","我只是随便看看，谢谢。"],
- ["购物餐厅","Could I pay by card?","可以刷卡吗？"],
- ["购物餐厅","Is there a table for two?","有两个人的位子吗？"],
- ["购物餐厅","Do you have this in a smaller size?","这个有小一号的吗？"],
- ["出行","How do I get to the station?","去车站怎么走？"],
- ["出行","Could you say that again, please?","能再说一遍吗？"],
- ["出行","What time does it leave?","几点出发？"],
- ["工作学习","Let's catch up later.","回头再聊。"],
- ["工作学习","I'll get back to you.","我稍后回复你。"],
- ["工作学习","Could you give me a hand?","能帮我一下吗？"]
+const DAYS=[
+{t:"天气与季节",w:[
+"drizzle|n./v.|毛毛雨；下毛毛雨|It's been drizzling all morning.",
+"downpour|n.|倾盆大雨|We got caught in a downpour on the way home.",
+"overcast|adj.|阴天的|It's overcast again, typical November.",
+"chilly|adj.|冷飕飕的|It's a bit chilly this morning, isn't it?",
+"muggy|adj.|闷热潮湿的|It's really muggy today, I can't cool down.",
+"humid|adj.|潮湿的|London gets quite humid in August.",
+"freezing|adj.|冷极了|It's absolutely freezing out there.",
+"mild|adj.|（天气）温和的|It's been a mild winter so far.",
+"breezy|adj.|有微风的|It's lovely and breezy by the sea.",
+"gusty|adj.|阵风大的|It's too gusty to put the washing out.",
+"forecast|n.|天气预报|The forecast says it'll brighten up later.",
+"brighten up|phr. v.|（天气）转晴|Hopefully it'll brighten up this afternoon.",
+"shower|n.|阵雨|There might be a few showers later.",
+"sleet|n.|雨夹雪|It turned to sleet on the way back.",
+"hail|n.|冰雹|We had hail the size of peas yesterday.",
+"frost|n.|霜|There was a heavy frost this morning.",
+"icy|adj.|结冰的|Be careful, the pavement's icy.",
+"fog|n.|雾|The fog was so thick I could barely see.",
+"heatwave|n.|热浪|Everyone was complaining during the heatwave.",
+"scorching|adj.|酷热的|It was scorching on Saturday.",
+"sunny spell|n.|短暂的晴天|We should get a few sunny spells this afternoon.",
+"grey|adj.|（英式拼写）灰蒙蒙的|It's been so grey all week.",
+"damp|adj.|潮湿的|My clothes are still damp.",
+"soaked|adj.|湿透的|I got absolutely soaked walking here.",
+"brolly|n.|（英式口语）雨伞|Don't forget your brolly.",
+"layer|n.|（衣服的）一层|Wear a few layers, it's cold out.",
+"wrap up|phr. v.|穿暖和|Wrap up warm, it's freezing.",
+"plummet|v.|骤降|Temperatures plummeted overnight.",
+"thaw|v.|解冻；融化|The snow should thaw by Monday.",
+"seasonal|adj.|季节性的|Seasonal fruit is usually cheaper.",
+"daylight|n.|白昼；日光|We lose an hour of daylight next week.",
+"dusk|n.|黄昏|It's dark by dusk at half four now.",
+"dawn|n.|黎明|I was up before dawn.",
+"gloomy|adj.|阴暗的；沉闷的|It's such a gloomy day.",
+"crisp|adj.|（天气）清冷爽快的|I love a crisp autumn morning.",
+"blustery|adj.|狂风大作的|It's a blustery day on the coast.",
+"unpredictable|adj.|难以预测的|British weather is so unpredictable.",
+"drought|n.|干旱|There's a hosepipe ban because of the drought.",
+"flood|n./v.|洪水；淹没|The road by the river flooded again.",
+"puddle|n.|水坑|I stepped right in a puddle.",
+"slippery|adj.|滑的|The steps are slippery when it's wet.",
+"sunburnt|adj.|晒伤的|I got sunburnt on my shoulders.",
+"sunscreen|n.|防晒霜|Don't forget to put some sunscreen on.",
+"degree|n.|（温度）度|It's only five degrees today.",
+"Celsius|n.|摄氏度|It's about twenty degrees Celsius.",
+"cosy|adj.|（英式拼写）温暖舒适的|It's nice and cosy in here.",
+"radiator|n.|暖气片|Can you turn the radiator up a bit?",
+"heating|n.|暖气|We haven't put the heating on yet.",
+"bitterly|adv.|刺骨地|It's bitterly cold tonight.",
+"miserable|adj.|（天气）阴冷难受的|What a miserable day."
+],p:[
+"Lovely day, isn't it?|今天天气真好，是吧？",
+"It's freezing out there!|外面冷死了！",
+"It's chucking it down.|雨下得好大。（英式口语）",
+"Looks like rain.|看样子要下雨了。",
+"At least it's not raining.|至少没下雨。",
+"It's supposed to brighten up later.|据说晚点会放晴。",
+"I can't believe how warm it is today.|真不敢相信今天这么暖和。",
+"Make the most of the sunshine.|好好享受阳光吧。",
+"We don't get many days like this.|这样的好天气可不多。",
+"I'm sick of all this rain.|我受够了这雨。",
+"Typical British weather!|典型的英国天气！",
+"It's turned cold, hasn't it?|天变冷了，是吧？",
+"Did you get caught in the rain?|你被雨淋了吗？",
+"The days are getting shorter.|白天越来越短了。",
+"The clocks go back this weekend.|这周末要把钟调回去（改冬令时）。",
+"Mind how you go, it's icy.|路上小心，结冰了。",
+"I'm melting in this heat.|热得我快化了。",
+"Fingers crossed it stays dry.|希望别下雨。",
+"It's a bit nippy today.|今天有点冷。（英式口语）",
+"Have you seen the forecast for the weekend?|你看周末的天气预报了吗？"
+]},
+{t:"问候、近况与心情",w:[
+"knackered|adj.|（英式口语）累坏了|I'm absolutely knackered after work.",
+"shattered|adj.|（英式口语）筋疲力尽|I'm shattered, I need an early night.",
+"chuffed|adj.|（英式口语）很高兴|She was really chuffed with her results.",
+"gutted|adj.|（英式口语）非常失望|I was gutted when they lost.",
+"fed up|adj.|厌烦的；受够了|I'm fed up with my commute.",
+"stressed out|adj.|压力很大的|I've been really stressed out lately.",
+"overwhelmed|adj.|不知所措的|I felt a bit overwhelmed at first.",
+"relieved|adj.|松了口气的|I was so relieved when it was over.",
+"thrilled|adj.|非常兴奋的|We're thrilled about the new flat.",
+"delighted|adj.|很高兴的|I'd be delighted to come.",
+"grateful|adj.|感激的|I'm really grateful for your help.",
+"anxious|adj.|焦虑的|I get anxious before interviews.",
+"frustrated|adj.|沮丧的；恼火的|I get so frustrated with the trains.",
+"annoyed|adj.|恼火的|I was a bit annoyed, to be honest.",
+"upset|adj.|难过的|She was upset about the news.",
+"cheerful|adj.|开心的|You're very cheerful this morning!",
+"grumpy|adj.|脾气坏的|I'm always grumpy before my coffee.",
+"moody|adj.|喜怒无常的|He's been a bit moody lately.",
+"content|adj.|满足的|I'm quite content with how things are.",
+"homesick|adj.|想家的|I still get homesick sometimes.",
+"lonely|adj.|孤独的|It can get lonely living on your own.",
+"restless|adj.|坐立不安的|I felt restless staying in all day.",
+"exhausting|adj.|让人筋疲力尽的|This week has been exhausting.",
+"hectic|adj.|忙乱的|It's been a hectic week.",
+"manic|adj.|（口语）忙疯了|Work's been manic recently.",
+"catch up|phr. v.|叙旧；聊近况|We should catch up over coffee.",
+"bump into|phr. v.|偶遇|I bumped into Sarah at the shops.",
+"ages|n.|（口语）很久|I haven't seen you for ages!",
+"mate|n.|（英式口语）朋友；哥们|Thanks, mate.",
+"cheers|interj.|谢谢；干杯|Cheers for that.",
+"lovely|adj.|（英式常用）很好的|That's lovely, thank you.",
+"brilliant|adj.|太棒了|That's brilliant news!",
+"awkward|adj.|尴尬的|There was an awkward silence.",
+"genuine|adj.|真诚的|She's a really genuine person.",
+"mood|n.|心情|I'm in a good mood today.",
+"cope|v.|应付|How are you coping with the new job?",
+"struggle|v.|艰难应付|I'm struggling a bit with the accent.",
+"settle in|phr. v.|安顿下来；适应|Are you settling in all right?",
+"sociable|adj.|爱社交的|She's really sociable.",
+"reckon|v.|（英式口语）认为|I reckon it'll be fine.",
+"fancy|v.|（英式口语）想要|Do you fancy a cuppa?",
+"cuppa|n.|（英式口语）一杯茶|Let's have a cuppa and a chat.",
+"chat|n./v.|闲聊|It was nice to have a chat.",
+"banter|n.|（友好的）打趣|There's a lot of banter in the office.",
+"sarcastic|adj.|讽刺的|Don't worry, he's just being sarcastic.",
+"polite|adj.|礼貌的|People here are very polite.",
+"introduce|v.|介绍|Let me introduce you to my flatmate.",
+"acquaintance|n.|熟人|He's more of an acquaintance than a friend.",
+"neighbour|n.|（英式拼写）邻居|Our neighbours are really friendly.",
+"pleased|adj.|高兴的|I'm really pleased for you."
+],p:[
+"How are you doing?|你最近怎么样？",
+"Not too bad, thanks. You?|还不错，谢谢。你呢？",
+"Can't complain.|还行，没什么好抱怨的。",
+"Same old, same old.|老样子。",
+"Long time no see!|好久不见！",
+"What have you been up to?|你最近在忙什么？",
+"I've been keeping busy.|我一直挺忙的。",
+"It's been a long week.|这周真漫长。",
+"Are you all right?|你好吗？（英式问候，不一定是问你有没有事）",
+"Yeah, all good, thanks.|嗯，都挺好的，谢谢。",
+"Nice to see you again.|很高兴再见到你。",
+"I'll let you get on.|不打扰你了。（礼貌地结束对话）",
+"Anyway, I'd better get going.|好啦，我得走了。",
+"Say hi to your family for me.|替我向你家人问好。",
+"That's really good to hear.|听到这个真高兴。",
+"Sorry to hear that.|听到这个很遗憾。",
+"Oh, that's a shame.|哎，真可惜。",
+"You look well!|你气色真好！",
+"How was your weekend?|你周末过得怎么样？",
+"Have a good one!|祝你愉快！（告别用语）"
+]},
+{t:"周末与爱好",w:[
+"pastime|n.|消遣|Gardening is a popular pastime here.",
+"lie-in|n.|睡懒觉|I had a lovely lie-in on Sunday.",
+"chill out|phr. v.|放松|I'm just going to chill out this weekend.",
+"unwind|v.|放松|I unwind by going for a run.",
+"hang out|phr. v.|一起玩；闲逛|We usually hang out at the park.",
+"ramble|n./v.|（乡间）漫步|We went for a ramble in the Peak District.",
+"hike|n./v.|徒步|It's a three-hour hike to the top.",
+"countryside|n.|乡村|I love getting out into the countryside.",
+"gig|n.|小型演出；演唱会|We're going to a gig on Friday.",
+"venue|n.|场地|The venue was really small.",
+"exhibition|n.|展览|There's a new exhibition at the museum.",
+"gallery|n.|美术馆|We spent the afternoon at the gallery.",
+"binge-watch|v.|刷剧|I binge-watched the whole series.",
+"series|n.|电视剧（一季）|Have you watched the new series?",
+"episode|n.|一集|I'm on episode four.",
+"spoiler|n.|剧透|No spoilers, please!",
+"podcast|n.|播客|I listen to podcasts on my commute.",
+"novel|n.|小说|I'm reading a really good novel.",
+"book club|n.|读书会|I've joined a book club.",
+"crafts|n.|手工|She's really into crafts.",
+"DIY|n.|自己动手（装修、修理）|I spent the weekend doing DIY.",
+"gardening|n.|园艺|My neighbour loves gardening.",
+"allotment|n.|（租用的）小块菜地|He grows vegetables on his allotment.",
+"car boot sale|n.|后备箱集市（二手市场）|I found this at a car boot sale.",
+"charity shop|n.|慈善二手店|I got this jacket from a charity shop.",
+"board game|n.|桌游|We had a board game night.",
+"quiz night|n.|（酒吧）知识竞赛之夜|Our local has a quiz night on Tuesdays.",
+"membership|n.|会员资格|I've got a gym membership.",
+"take up|phr. v.|开始（某个爱好）|I've taken up yoga.",
+"into|prep.|（口语）对…感兴趣|I'm really into photography.",
+"keen on|adj.|喜欢；热衷于|I'm not very keen on horror films.",
+"fond of|adj.|喜爱|She's very fond of her dog.",
+"passionate|adj.|热爱的|He's passionate about cooking.",
+"outing|n.|短途出游|We had a family outing to the zoo.",
+"day trip|n.|一日游|We did a day trip to Brighton.",
+"seaside|n.|海边|Let's go to the seaside this weekend.",
+"picnic|n.|野餐|We had a picnic in the park.",
+"barbecue|n.|烧烤|We're having a barbecue on Saturday.",
+"festival|n.|音乐节；节日|Are you going to any festivals this summer?",
+"sold out|adj.|售罄的|The show is completely sold out.",
+"queue|n./v.|排队；队伍|We queued for an hour to get in.",
+"crowded|adj.|拥挤的|The beach was really crowded.",
+"packed|adj.|挤满人的|The pub was packed last night.",
+"recommend|v.|推荐|Can you recommend a good film?",
+"spontaneous|adj.|一时兴起的|Let's be spontaneous and go to the coast.",
+"plans|n.|计划；安排|Have you got any plans tonight?",
+"free time|n.|空闲时间|What do you do in your free time?",
+"weekend away|n.|周末短途旅行|We're having a weekend away in the Lakes.",
+"sketch|v.|画素描|I like to sketch when I'm travelling.",
+"photography|n.|摄影|I've been getting into photography."
+],p:[
+"Got any plans for the weekend?|周末有什么安排吗？",
+"Nothing much, just taking it easy.|没什么，就放松一下。",
+"I'm having a quiet one this weekend.|这周末我打算安安静静过。",
+"Did you get up to anything nice?|你做了什么有意思的事吗？",
+"We should do something this weekend.|这周末我们应该一起做点什么。",
+"I'm up for it.|我愿意／我没问题。",
+"Count me in!|算我一个！",
+"I'll pass this time.|这次我就不去了。",
+"Maybe another time.|下次吧。",
+"What are you into?|你喜欢什么？（问兴趣）",
+"I've been meaning to try that.|我一直想试试那个。",
+"It's not really my thing.|那不太是我的菜。",
+"Have you watched anything good lately?|最近看了什么好看的吗？",
+"I couldn't put it down.|我根本停不下来。（形容书好看）",
+"It's well worth a visit.|很值得去看看。",
+"It was a great day out.|那天出去玩得很开心。",
+"I'm a bit of a homebody.|我比较宅。",
+"Let me know if you're free.|你有空就跟我说。",
+"Shall we say Saturday afternoon?|那就定周六下午？",
+"I'm free any time after six.|我六点以后都有空。"
+]},
+{t:"吃喝与酒吧",w:[
+"pint|n.|一品脱（啤酒）|Fancy a pint after work?",
+"round|n.|（给大家买的）一轮酒|It's my round, what are you having?",
+"lager|n.|拉格啤酒|I'll have a pint of lager.",
+"cider|n.|苹果酒|Have you got any cider?",
+"on tap|phr.|（酒）桶装现打的|What have you got on tap?",
+"tipsy|adj.|微醉的|I was a bit tipsy after two glasses.",
+"hangover|n.|宿醉|I've got a terrible hangover.",
+"sober|adj.|清醒的；没喝酒的|I'm staying sober tonight, I'm driving.",
+"takeaway|n.|外卖|Shall we get a takeaway tonight?",
+"Sunday roast|n.|周日烤肉大餐|Nothing beats a Sunday roast.",
+"fry-up|n.|英式煎炸早餐|I fancy a full fry-up.",
+"starter|n.|开胃菜|Shall we share a starter?",
+"main|n.|主菜|What are you having for your main?",
+"pudding|n.|（英式）甜点|Is there room for pudding?",
+"portion|n.|一份|The portions here are huge.",
+"leftovers|n.|剩菜|We had the leftovers for lunch.",
+"craving|n.|很想吃|I've got a real craving for chocolate.",
+"peckish|adj.|（英式口语）有点饿|I'm feeling a bit peckish.",
+"starving|adj.|（口语）饿死了|I'm starving, let's eat.",
+"stuffed|adj.|（口语）吃撑了|I'm stuffed, I can't eat another bite.",
+"bland|adj.|淡而无味的|The soup was a bit bland.",
+"spicy|adj.|辣的|Is it very spicy?",
+"greasy|adj.|油腻的|The chips were too greasy.",
+"savoury|adj.|（英式拼写）咸味的|I prefer savoury snacks to sweet ones.",
+"sweet tooth|n.|爱吃甜食|I've got a real sweet tooth.",
+"vegetarian|adj./n.|素食的；素食者|Are there any vegetarian options?",
+"vegan|adj./n.|纯素的；纯素食者|She's been vegan for years.",
+"allergy|n.|过敏|I've got a nut allergy.",
+"gluten-free|adj.|无麸质的|Have you got anything gluten-free?",
+"ingredient|n.|食材；配料|What are the main ingredients?",
+"recipe|n.|食谱|Can you send me the recipe?",
+"homemade|adj.|自制的|Is the cake homemade?",
+"crisps|n.|（英式）薯片|Do you want a packet of crisps?",
+"chips|n.|（英式）炸薯条|Fish and chips, please.",
+"biscuit|n.|（英式）饼干|Have a biscuit with your tea.",
+"cutlery|n.|餐具（刀叉勺）|Could we have some cutlery, please?",
+"tip|n.|小费|Should we leave a tip?",
+"service charge|n.|服务费|There's a service charge on the bill.",
+"split the bill|phr.|平分账单|Shall we split the bill?",
+"treat|n./v.|请客|My treat, put your money away.",
+"booking|n.|预订|Do we need a booking?",
+"specials|n.|今日特色菜|What are today's specials?",
+"local|n.|（英式）常去的本地酒吧|The Red Lion is my local.",
+"pub grub|n.|酒吧餐食|The pub grub here is great.",
+"brunch|n.|早午餐|Let's meet for brunch on Sunday.",
+"flavour|n.|（英式拼写）味道|This has a lovely flavour.",
+"tasty|adj.|美味的|That was really tasty.",
+"appetite|n.|胃口|I've lost my appetite.",
+"sip|n./v.|小口喝|Can I have a sip?",
+"cuisine|n.|菜系|Do you like Thai cuisine?"
+],p:[
+"Fancy grabbing a bite to eat?|要不要一起吃点东西？",
+"What are you having?|你要点什么？",
+"I'll have the same.|我要一样的。",
+"It's my round.|这轮我请。",
+"I'll get these.|这次我来付。",
+"Shall we go halves?|我们一人一半吧？",
+"Could we see the menu, please?|能看下菜单吗？",
+"What would you recommend?|你推荐什么？",
+"Could I get it without onions?|能不放洋葱吗？",
+"This is delicious!|这个真好吃！",
+"I couldn't eat another thing.|我一口都吃不下了。",
+"Can we get the bill, please?|可以买单吗？",
+"Is this seat taken?|这个位子有人吗？",
+"Shall we grab a table outside?|我们坐外面吧？",
+"Just a quick one, I've got work tomorrow.|就喝一杯，我明天还要上班。",
+"Cheers, everyone!|大家干杯！",
+"I'm not much of a drinker.|我不太喝酒。",
+"Help yourself.|随便吃，别客气。",
+"Could we get some tap water, please?|能给我们一些自来水吗？（英国餐厅免费）",
+"It's on me.|我请客。"
+]},
+{t:"工作与通勤",w:[
+"commute|n./v.|通勤|My commute is about forty minutes.",
+"rush hour|n.|高峰时段|The trains are packed at rush hour.",
+"delay|n.|延误|There are delays on the Northern line.",
+"cancelled|adj.|（英式拼写）取消的|My train was cancelled again.",
+"platform|n.|站台|The train leaves from platform four.",
+"season ticket|n.|长期车票（月票、年票）|A season ticket saves me a lot.",
+"strike|n.|罢工|There's a rail strike on Thursday.",
+"remotely|adv.|远程地|I work remotely on Fridays.",
+"hybrid|adj.|混合（办公）的|My job's hybrid, three days in the office.",
+"colleague|n.|同事|My colleagues are really friendly.",
+"line manager|n.|直属上司|I'll check with my line manager.",
+"deadline|n.|截止日期|I've got a tight deadline.",
+"workload|n.|工作量|My workload is crazy at the moment.",
+"overtime|n.|加班|I've been doing a lot of overtime.",
+"shift|n.|班次|I'm on the early shift tomorrow.",
+"promotion|n.|升职|She just got a promotion.",
+"pay rise|n.|加薪|I'm hoping for a pay rise this year.",
+"salary|n.|薪水|The salary's decent.",
+"annual leave|n.|年假|I've got a week of annual leave left.",
+"off sick|phr.|请病假|He's off sick today.",
+"day off|n.|休息日|I've got a day off on Friday.",
+"bank holiday|n.|（英国）公共假日|It's a bank holiday on Monday.",
+"catch-up|n.|（工作上的）碰头会|We have a quick catch-up every Monday.",
+"appraisal|n.|绩效评估|My appraisal went well.",
+"feedback|n.|反馈|Thanks for the feedback.",
+"CV|n.|简历|I've updated my CV.",
+"job hunting|n.|找工作|How's the job hunting going?",
+"career|n.|职业生涯|I'm thinking about a career change.",
+"industry|n.|行业|What industry are you in?",
+"freelance|adj./adv.|自由职业的|I work freelance as a designer.",
+"self-employed|adj.|自雇的|He's been self-employed for years.",
+"redundant|adj.|被裁员的|He was made redundant last year.",
+"resign|v.|辞职|She resigned to start her own business.",
+"notice|n.|辞职通知期|I handed in my notice yesterday.",
+"contract|n.|合同|It's a six-month contract.",
+"flexible|adj.|灵活的|My hours are quite flexible.",
+"swamped|adj.|忙得不可开交|I'm swamped with emails.",
+"tied up|adj.|忙着；脱不开身|Sorry, I'm tied up all afternoon.",
+"productive|adj.|高效的|I've had a really productive day.",
+"burnout|n.|职业倦怠|Take a break before you hit burnout.",
+"canteen|n.|食堂|Let's grab lunch in the canteen.",
+"reception|n.|前台|Please sign in at reception.",
+"follow up|phr. v.|跟进|I'll follow up with an email.",
+"handle|v.|处理|Can you handle this one?",
+"sort out|phr. v.|解决；处理好|Don't worry, I'll sort it out.",
+"in charge of|phr.|负责|Who's in charge of this project?",
+"client|n.|客户|I'm meeting a client this afternoon.",
+"pension|n.|养老金|I pay into a workplace pension.",
+"payday|n.|发薪日|It's payday on Friday!",
+"knock off|phr. v.|（口语）下班|What time do you knock off?"
+],p:[
+"What do you do for a living?|你是做什么工作的？",
+"I work in marketing.|我做市场营销。",
+"How's work going?|工作怎么样？",
+"It's been non-stop.|一直忙个不停。",
+"I'm snowed under at the moment.|我最近忙得不可开交。",
+"Are you working from home today?|你今天在家办公吗？",
+"The trains were a nightmare this morning.|今天早上的火车太糟糕了。",
+"Thank goodness it's Friday!|终于星期五了！",
+"Have you got much on this week?|你这周事多吗？",
+"I'll get back to you on that.|这事我回头答复你。",
+"Let's touch base next week.|我们下周再碰一下。",
+"Could you give me a hand with this?|你能帮我弄一下这个吗？",
+"I'm off tomorrow.|我明天休息。",
+"I'm heading off now, see you tomorrow.|我先走了，明天见。",
+"Do you enjoy it?|你喜欢这份工作吗？",
+"How long have you been there?|你在那儿干了多久了？",
+"I'm between jobs at the moment.|我目前在找工作。",
+"It pays the bills.|够过日子。",
+"Fancy a coffee break?|要不要休息一下喝杯咖啡？",
+"Don't work too hard!|别太累了！"
+]},
+{t:"住房与邻里",w:[
+"flat|n.|（英式）公寓|I live in a two-bedroom flat.",
+"flatmate|n.|室友|My flatmate is from Spain.",
+"landlord|n.|房东|I need to call my landlord about the boiler.",
+"letting agent|n.|租房中介|The letting agent showed us around.",
+"tenancy|n.|租约|My tenancy ends in March.",
+"deposit|n.|押金|I got my deposit back in full.",
+"rent|n./v.|房租；租|The rent here is really high.",
+"bills included|phr.|包含水电煤等费用|Is the rent bills included?",
+"council tax|n.|市政税|Council tax is due on the first.",
+"utilities|n.|水电煤气等公用事业|The utilities are in my name.",
+"boiler|n.|锅炉；热水器|The boiler's broken again.",
+"leak|n./v.|漏水|There's a leak in the bathroom.",
+"mould|n.|（英式拼写）霉|There's mould on the bedroom wall.",
+"draughty|adj.|（英式）漏风的|This old house is really draughty.",
+"furnished|adj.|带家具的|Is the flat furnished?",
+"unfurnished|adj.|不带家具的|It's unfurnished, so we need a sofa.",
+"detached|adj.|独立式的（房屋）|They live in a detached house.",
+"semi-detached|adj.|半独立式的（房屋）|We live in a semi-detached house.",
+"terraced house|n.|联排房屋|Most of the street is terraced houses.",
+"high street|n.|（英式）商业大街|There are lots of shops on the high street.",
+"neighbourhood|n.|（英式拼写）街区|It's a quiet neighbourhood.",
+"suburb|n.|郊区|We moved out to the suburbs.",
+"move house|phr.|搬家|We're moving house next month.",
+"removal van|n.|搬家车|The removal van comes at nine.",
+"decorate|v.|装修；粉刷布置|We're decorating the living room.",
+"renovate|v.|翻新|They renovated the kitchen.",
+"bin|n.|垃圾桶|Can you take the bins out?",
+"recycling|n.|回收物|The recycling goes out on Thursdays.",
+"bin day|n.|收垃圾日|Is it bin day tomorrow?",
+"noisy|adj.|吵的|Our upstairs neighbours are quite noisy.",
+"parcel|n.|包裹|I took in a parcel for you.",
+"doorbell|n.|门铃|The doorbell doesn't work.",
+"shed|n.|（花园里的）小棚屋|The bikes are in the shed.",
+"driveway|n.|（房前的）车道|You can park on the driveway.",
+"estate agent|n.|房产中介|The estate agent said it'd sell quickly.",
+"mortgage|n.|房贷|We've just got a mortgage.",
+"viewing|n.|看房|We've got a viewing on Saturday.",
+"spacious|adj.|宽敞的|The living room is really spacious.",
+"cramped|adj.|狭窄拥挤的|My old flat was a bit cramped.",
+"handy|adj.|方便的；离得近的|It's handy for the station.",
+"amenities|n.|生活设施|There are good amenities nearby.",
+"corner shop|n.|街角小店|I'll go to the corner shop.",
+"nip|v.|（英式口语）快去一下|I'm just nipping out for some milk.",
+"plumber|n.|水管工|We need to call a plumber.",
+"electrician|n.|电工|The electrician is coming tomorrow.",
+"housewarming|n.|乔迁聚会|We're having a housewarming party.",
+"spare room|n.|空房间；客房|You can stay in the spare room.",
+"hoover|v./n.|（英式）吸尘；吸尘器|I need to hoover the flat.",
+"washing-up|n.|（英式）洗碗|It's your turn to do the washing-up.",
+"laundry|n.|要洗的衣物|I've got loads of laundry to do."
+],p:[
+"Whereabouts do you live?|你住哪一带？",
+"I've just moved in.|我刚搬进来。",
+"How long have you lived here?|你在这儿住多久了？",
+"It's a nice area.|这片区挺好的。",
+"It's really handy for the shops.|买东西很方便。",
+"Could you keep the noise down a bit?|能小声一点吗？",
+"Sorry to bother you.|抱歉打扰一下。",
+"I think this parcel is for you.|我想这个包裹是你的。",
+"Do you know when bin day is?|你知道哪天收垃圾吗？",
+"Let me know if you need anything.|有需要随时说。",
+"Pop round any time.|随时过来坐坐。",
+"The heating's not working.|暖气坏了。",
+"Could you have a look at it?|你能帮忙看一下吗？",
+"Is it all right if I park here?|我可以停在这儿吗？",
+"We're having a few people over on Saturday.|周六我们请几个朋友来家里。",
+"It might get a bit loud, sorry in advance.|可能会有点吵，先说声抱歉。",
+"Make yourself at home.|别客气，就当自己家。",
+"Shall I take my shoes off?|要我脱鞋吗？",
+"I'm looking for a new place.|我在找新住处。",
+"The rent's gone up again.|房租又涨了。"
+]},
+{t:"旅行与度假",w:[
+"holiday|n.|（英式）假期；度假|Are you going on holiday this year?",
+"getaway|n.|短途度假|We need a little getaway.",
+"staycation|n.|在本国度假|We're having a staycation this year.",
+"abroad|adv.|在国外|Are you going abroad this summer?",
+"destination|n.|目的地|What's your favourite destination?",
+"itinerary|n.|行程|I've planned our itinerary.",
+"check in|phr. v.|办理入住或登机|We can check in after three.",
+"check out|phr. v.|退房|We have to check out by eleven.",
+"boarding pass|n.|登机牌|Have you got your boarding pass?",
+"departure|n.|出发|The departures board says it's delayed.",
+"arrival|n.|到达|Our arrival time is six o'clock.",
+"layover|n.|中转停留|We had a four-hour layover in Dubai.",
+"jet lag|n.|时差反应|The jet lag was awful this time.",
+"hand luggage|n.|手提行李|I'm only taking hand luggage.",
+"suitcase|n.|行李箱|My suitcase is too heavy.",
+"pack|v.|收拾行李|I haven't packed yet.",
+"passport|n.|护照|Don't forget your passport.",
+"visa|n.|签证|Do I need a visa?",
+"currency|n.|货币|I need to change some currency.",
+"exchange rate|n.|汇率|The exchange rate isn't great right now.",
+"souvenir|n.|纪念品|I bought a few souvenirs.",
+"sightseeing|n.|观光|We did loads of sightseeing.",
+"landmark|n.|地标|It's the city's most famous landmark.",
+"touristy|adj.|游客多的；商业化的|It's a bit touristy, but worth seeing.",
+"off the beaten track|phr.|偏僻的；人少的|We found a village off the beaten track.",
+"breathtaking|adj.|令人惊叹的|The views were breathtaking.",
+"scenery|n.|风景|The scenery in Scotland is amazing.",
+"coast|n.|海岸|We drove along the coast.",
+"cottage|n.|乡间小屋|We rented a cottage in Cornwall.",
+"B&B|n.|民宿（含早餐）|We stayed at a lovely B&B.",
+"hostel|n.|青年旅舍|I stayed in hostels when I was a student.",
+"road trip|n.|自驾游|We're going on a road trip.",
+"railcard|n.|（英国）火车优惠卡|Get a railcard, it saves you a third.",
+"return ticket|n.|（英式）往返票|A return ticket to York, please.",
+"single|n.|（英式）单程票|Just a single, please.",
+"off-peak|adj.|非高峰的|Off-peak tickets are much cheaper.",
+"journey|n.|旅程；路程|How was the journey?",
+"connection|n.|转乘|I missed my connection.",
+"travel insurance|n.|旅行保险|Have you got travel insurance?",
+"all-inclusive|adj.|全包的|We went all-inclusive in Spain.",
+"tan|n.|晒黑的肤色|You've got a nice tan!",
+"relaxing|adj.|令人放松的|It was so relaxing.",
+"memorable|adj.|难忘的|It was a really memorable trip.",
+"explore|v.|探索|We spent the day exploring the old town.",
+"recommendation|n.|推荐|Any recommendations for Edinburgh?",
+"guidebook|n.|旅游指南|The guidebook says it's closed on Mondays.",
+"culture shock|n.|文化冲击|I had a bit of culture shock at first.",
+"bucket list|n.|人生愿望清单|Iceland is on my bucket list.",
+"backpacking|n.|背包旅行|I went backpacking around Asia.",
+"jet-lagged|adj.|有时差反应的|I'm still a bit jet-lagged."
+],p:[
+"Are you going anywhere nice this year?|今年有去哪儿玩吗？",
+"Where did you go on holiday?|你去哪里度假了？",
+"Did you have a good time?|玩得开心吗？",
+"How was the flight?|飞行顺利吗？",
+"Have you ever been to Scotland?|你去过苏格兰吗？",
+"It's on my list.|在我想去的清单上。",
+"I'd love to go back.|我很想再去一次。",
+"It was absolutely gorgeous.|美极了。",
+"The weather was perfect the whole time.|天气一直特别好。",
+"It's well worth the trip.|很值得专门去一趟。",
+"We got a really good deal.|我们订到了很划算的价格。",
+"I need a holiday after my holiday!|度完假我还得再休息一下！",
+"Have a safe trip!|一路平安！",
+"Send me some photos!|发点照片给我！",
+"When are you back?|你什么时候回来？",
+"I'm just back from Spain.|我刚从西班牙回来。",
+"It was a bit of a disaster, to be honest.|说实话，那次有点糟糕。",
+"Is it far from here?|离这儿远吗？",
+"Can you recommend anywhere to stay?|你能推荐住的地方吗？",
+"I'm still recovering from the jet lag.|我还在倒时差。"
+]},
+{t:"健康与运动",w:[
+"GP|n.|（英国）全科医生|I need to register with a GP.",
+"surgery|n.|（英式）诊所|The surgery opens at eight.",
+"pharmacy|n.|药房|You can get it at the pharmacy.",
+"chemist|n.|（英式）药店|I'll pop to the chemist.",
+"prescription|n.|处方|I need to pick up my prescription.",
+"symptom|n.|症状|What are your symptoms?",
+"sore throat|n.|喉咙痛|I've got a sore throat.",
+"runny nose|n.|流鼻涕|I've got a runny nose.",
+"cough|n./v.|咳嗽|I can't shake off this cough.",
+"fever|n.|发烧|She's got a fever.",
+"headache|n.|头痛|I've got a splitting headache.",
+"under the weather|phr.|身体不舒服|I'm feeling a bit under the weather.",
+"bug|n.|（口语）小病；病菌|There's a bug going round the office.",
+"flu|n.|流感|Half the office has got flu.",
+"jab|n.|（英式口语）打针；疫苗|Have you had your flu jab yet?",
+"recover|v.|康复|I'm still recovering from a cold.",
+"painkiller|n.|止痛药|Take a couple of painkillers.",
+"injury|n.|受伤|He's out with a knee injury.",
+"sprain|v.|扭伤|I sprained my ankle playing football.",
+"A&E|n.|（英国）急诊|We spent four hours in A&E.",
+"appointment|n.|预约|I've got a doctor's appointment.",
+"NHS|n.|英国国民医疗服务体系|The NHS is free at the point of use.",
+"dentist|n.|牙医|I need to find an NHS dentist.",
+"work out|phr. v.|锻炼|I try to work out three times a week.",
+"fit|adj.|健康的；体格好的|I'm trying to get fit.",
+"unfit|adj.|身体不好的|I'm so unfit these days.",
+"jog|v.|慢跑|I jog around the park.",
+"stretch|v.|拉伸|Remember to stretch afterwards.",
+"sore|adj.|酸痛的|My legs are sore from yesterday.",
+"out of breath|phr.|上气不接下气|I was out of breath after the stairs.",
+"warm up|phr. v.|热身|Let's warm up first.",
+"fitness|n.|健康；体能|I'm working on my fitness.",
+"diet|n.|饮食|I'm trying to eat a healthier diet.",
+"balanced|adj.|均衡的|A balanced diet is important.",
+"cut down on|phr. v.|减少|I'm cutting down on sugar.",
+"wellbeing|n.|身心健康|Walking is great for your wellbeing.",
+"mental health|n.|心理健康|Look after your mental health.",
+"pitch|n.|（英式）球场|The pitch was really muddy.",
+"match|n.|比赛|Did you watch the match last night?",
+"supporter|n.|（球队的）支持者|I'm a Liverpool supporter.",
+"league|n.|联赛|They're top of the league.",
+"score|v.|得分；进球|Who scored?",
+"draw|n.|平局|It ended in a draw.",
+"referee|n.|裁判|The referee had a terrible game.",
+"cycling|n.|骑自行车|Cycling to work keeps me fit.",
+"marathon|n.|马拉松|She's training for a marathon.",
+"yoga|n.|瑜伽|Yoga really helps me relax.",
+"posture|n.|姿势；体态|Sitting all day is bad for my posture.",
+"hydrated|adj.|水分充足的|Make sure you stay hydrated.",
+"antibiotics|n.|抗生素|The doctor put me on antibiotics."
+],p:[
+"I'm feeling a bit under the weather.|我有点不舒服。",
+"I think I'm coming down with something.|我好像要生病了。",
+"Hope you feel better soon.|希望你早日康复。",
+"Take it easy.|好好休息。",
+"Have you been to the doctor's?|你去看医生了吗？",
+"There's something going round.|最近有病在传染。",
+"I'm on antibiotics.|我在吃抗生素。",
+"Did you watch the game?|你看比赛了吗？",
+"Who do you support?|你支持哪个队？",
+"What a match!|多精彩的比赛！",
+"I'm not really into football.|我不太喜欢足球。",
+"I've been trying to get back into running.|我一直想重新开始跑步。",
+"I'm aching all over.|我浑身酸痛。",
+"I could do with some fresh air.|我需要出去透透气。",
+"No pain, no gain.|不劳无获。",
+"I'm trying to be good this week.|这周我想管住嘴。",
+"Do you fancy coming for a run with me?|要不要跟我一起去跑步？",
+"I pulled a muscle.|我拉伤了肌肉。",
+"I'm off work with a cold.|我感冒了，请假在家。",
+"Get well soon!|早日康复！"
+]},
+{t:"购物与花钱",w:[
+"bargain|n.|便宜货；划算|That's a real bargain.",
+"discount|n.|折扣|Do you offer a student discount?",
+"sale|n.|促销|Everything's in the sale.",
+"reduced|adj.|降价的|These shoes were reduced.",
+"pricey|adj.|（口语）贵的|It's a bit pricey here.",
+"rip-off|n.|（口语）宰人；不值|Ten pounds for a coffee? What a rip-off!",
+"afford|v.|买得起|I can't afford it right now.",
+"budget|n.|预算|I'm on a tight budget this month.",
+"skint|adj.|（英式口语）没钱的|I'm skint until payday.",
+"quid|n.|（英式口语）英镑|It only cost five quid.",
+"fiver|n.|五英镑纸币|Can you lend me a fiver?",
+"tenner|n.|十英镑纸币|It's a tenner each.",
+"change|n.|零钱；找零|Have you got any change?",
+"contactless|adj.|感应支付的|Can I pay contactless?",
+"receipt|n.|收据|Do you need a receipt?",
+"refund|n.|退款|I'd like a refund, please.",
+"exchange|n./v.|换货|Can I exchange this for a bigger size?",
+"faulty|adj.|有毛病的|This kettle is faulty.",
+"try on|phr. v.|试穿|Can I try this on?",
+"fitting room|n.|试衣间|Where are the fitting rooms?",
+"size|n.|尺码|What size are you?",
+"suit|v.|适合|That colour really suits you.",
+"browse|v.|随便看看|I'm just browsing.",
+"checkout|n.|收银台|There's a long queue at the checkout.",
+"self-checkout|n.|自助收银|I always use the self-checkout.",
+"loyalty card|n.|会员卡|Have you got a loyalty card?",
+"bag for life|n.|（英国）可重复用的购物袋|I forgot my bag for life.",
+"online shopping|n.|网购|I do most of my shopping online.",
+"delivery|n.|送货|Is delivery free?",
+"out of stock|phr.|缺货|Sorry, it's out of stock.",
+"brand|n.|品牌|What brand is it?",
+"second-hand|adj.|二手的|I bought it second-hand.",
+"splash out|phr. v.|大手笔花钱|I splashed out on a new coat.",
+"treat yourself|phr.|犒劳自己|Go on, treat yourself!",
+"impulse buy|n.|冲动消费|It was a total impulse buy.",
+"value for money|n.|性价比|It's good value for money.",
+"overpriced|adj.|定价过高的|The drinks are overpriced.",
+"offer|n.|优惠活动|It's on offer, buy one get one free.",
+"own-brand|adj.|（超市）自有品牌的|Own-brand stuff is just as good.",
+"cost of living|n.|生活成本|The cost of living has gone up.",
+"inflation|n.|通货膨胀|Inflation is hitting everyone.",
+"save up|phr. v.|攒钱|I'm saving up for a holiday.",
+"bank account|n.|银行账户|I need to open a bank account.",
+"overdraft|n.|透支额度|I'm in my overdraft again.",
+"cashback|n.|返现|This card gives you cashback.",
+"subscription|n.|订阅|I cancelled my streaming subscription.",
+"bill|n.|账单|The energy bill was huge this month.",
+"direct debit|n.|（英国）自动扣款|I pay it by direct debit.",
+"haggle|v.|讨价还价|You can't really haggle in shops here.",
+"window shopping|n.|只逛不买|We went window shopping."
+],p:[
+"I'm just having a look, thanks.|我只是看看，谢谢。",
+"Do you have this in a medium?|这个有中号吗？",
+"Where can I find the milk?|牛奶在哪儿？",
+"How much is this?|这个多少钱？",
+"Is this on offer?|这个在打折吗？",
+"That's a good price.|这个价格挺好。",
+"I'll leave it, thanks.|我不要了，谢谢。",
+"I'll take it.|我买了。",
+"Do you need a bag?|你需要袋子吗？",
+"I'm fine without, thanks.|不用了，谢谢。",
+"Could I get a receipt, please?|能给我收据吗？",
+"Do you take cash?|你们收现金吗？",
+"I'm a bit short this month.|我这个月手头有点紧。",
+"I can't justify spending that much.|花那么多我说服不了自己。",
+"Everything's so expensive these days.|现在什么都好贵。",
+"Where did you get that? I love it!|你在哪儿买的？我好喜欢！",
+"It was a bargain!|特别划算！",
+"It's not worth the money.|不值这个价。",
+"Have you got anything cheaper?|有便宜一点的吗？",
+"Can I pay by card?|可以刷卡吗？"
+]},
+{t:"聊观点与地道口语",w:[
+"honestly|adv.|说实话|Honestly, I didn't enjoy it.",
+"apparently|adv.|据说；好像|Apparently, it's going to snow.",
+"basically|adv.|基本上；简单来说|Basically, we ran out of time.",
+"literally|adv.|（口语强调）简直|I literally ran all the way here.",
+"to be fair|phr.|说句公道话|To be fair, he did apologise.",
+"definitely|adv.|肯定|I'll definitely come.",
+"absolutely|adv.|绝对；完全|Absolutely, I agree.",
+"fairly|adv.|相当|It's fairly quiet round here.",
+"rubbish|n./adj.|（英式）垃圾；很差|The film was rubbish.",
+"dodgy|adj.|（英式口语）可疑的；靠不住的|That restaurant looks a bit dodgy.",
+"cheeky|adj.|（英式口语）调皮的；放肆的|Fancy a cheeky drink after work?",
+"gobsmacked|adj.|（英式口语）目瞪口呆|I was gobsmacked when I heard.",
+"sorted|adj.|（英式口语）搞定了|Don't worry, it's all sorted.",
+"proper|adj.|（英式口语）真正的；像样的|That's a proper meal.",
+"loads|n.|（口语）很多|I've got loads to do.",
+"bits and bobs|n.|零碎东西|I just need to grab a few bits and bobs.",
+"faff|n./v.|（英式口语）麻烦事；瞎折腾|It's such a faff getting there.",
+"bloke|n.|（英式口语）男人；家伙|He's a nice bloke.",
+"chap|n.|（英式口语）小伙子|He's a friendly chap.",
+"posh|adj.|高档的；上流的|It's a bit posh for me.",
+"quirky|adj.|古怪有趣的|It's a quirky little café.",
+"opinion|n.|观点|In my opinion, it's overrated.",
+"overrated|adj.|被高估的|That place is completely overrated.",
+"underrated|adj.|被低估的|It's a really underrated film.",
+"controversial|adj.|有争议的|That's a bit controversial.",
+"point|n.|观点；要点|That's a good point.",
+"perspective|n.|视角|It's interesting to hear your perspective.",
+"disagree|v.|不同意|I have to disagree with you there.",
+"debate|n.|辩论；讨论|There's a big debate about it.",
+"headline|n.|新闻标题|Did you see the headlines this morning?",
+"current affairs|n.|时事|I try to keep up with current affairs.",
+"election|n.|选举|Are you voting in the election?",
+"policy|n.|政策|The new policy is a bit confusing.",
+"rumour|n.|（英式拼写）传闻|There's a rumour they're closing the shop.",
+"gossip|n./v.|八卦|Have you heard the latest gossip?",
+"trending|adj.|热门的|It's trending on social media.",
+"viral|adj.|（网络）爆红的|The video went viral.",
+"mention|v.|提到|You mentioned you'd been to Italy.",
+"assume|v.|以为；假设|I assumed you'd already left.",
+"suppose|v.|猜想；认为|I suppose you're right.",
+"whereas|conj.|而；然而|I love tea, whereas my wife prefers coffee.",
+"anyway|adv.|总之；不管怎样|Anyway, what were we talking about?",
+"by the way|phr.|顺便说一下|By the way, did you get my message?",
+"actually|adv.|实际上|Actually, I've changed my mind.",
+"mind you|phr.|（英式口语）不过话说回来|It was expensive. Mind you, it was delicious.",
+"fair|adj.|公平的；合理的|That's not fair.",
+"weird|adj.|奇怪的|That's so weird.",
+"hilarious|adj.|非常好笑的|The show was hilarious.",
+"cringe|v.|感到尴尬|I cringe when I think about it.",
+"small talk|n.|闲聊；寒暄|I'm getting better at small talk."
+],p:[
+"I know what you mean.|我懂你的意思。",
+"That's a fair point.|说得有道理。",
+"I couldn't agree more.|我完全同意。",
+"I'm not so sure about that.|这个我不太确定。",
+"I see where you're coming from.|我理解你为什么这么想。",
+"Did you see that on the news?|你看到新闻里那件事了吗？",
+"No way!|不会吧！",
+"You're joking!|开玩笑吧！",
+"Tell me about it.|可不是嘛。（表示深有同感）",
+"Fair enough.|行吧，有道理。",
+"Good for you!|真为你高兴！",
+"What a nightmare!|太糟糕了！",
+"That's a bit much.|这有点过分了。",
+"Fair play to him.|这点得给他点赞。（英式）",
+"It's not the end of the world.|又不是世界末日。",
+"Each to their own.|萝卜青菜，各有所爱。",
+"I'm easy.|我都行。",
+"Where was I?|我刚说到哪儿了？",
+"Sorry, what were you saying?|抱歉，你刚才说什么？",
+"It's been lovely chatting to you.|跟你聊天很开心。"
+]}
 ];
 // opts: [english, isRight, note, chinese(for the right one)]
 const SCENES=[
@@ -632,17 +1311,26 @@ const SPK='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/
 
 let custom=store.get("vb.custom",[]);
 let wrong=store.get("vb.wrong",{});
-let settings=Object.assign({accent:"en-GB",rate:0.9,showZh:true,src:"words",goal:20,rainShow:"en",rainSrc:"words",rainSound:true,clozeSrc:"all",clozeZh:true,talkMode:"pick",lib:"words"},store.get("vb.settings",{}));
+let settings=Object.assign({accent:"en-GB",rate:0.9,showZh:true,src:"today",goal:70,rainShow:"en",rainSrc:"today",rainSound:true,clozeSrc:"today",talkMode:"pick",lib:"words",day:1},store.get("vb.settings",{}));
+// settings saved by the earlier version used different source names
+if(!["today","todayP","review","mine","wrong"].includes(settings.src))settings.src="today";
+if(!["today","review","mine","wrong"].includes(settings.rainSrc))settings.rainSrc="today";
+if(!["today","review","mine"].includes(settings.clozeSrc))settings.clozeSrc="today";
+if(settings.v!==2){settings.v=2;settings.goal=70}
 const saveSettings=()=>store.set("vb.settings",settings);
 let stats=store.get("vb.stats",{date:today,done:0,ok:0});
 if(stats.date!==today)stats={date:today,done:0,ok:0};
 const saveWrong=()=>store.set("vb.wrong",wrong);
 
-function allItems(){
-  const w=WORDS.map((r,i)=>({id:"w"+i,type:"word",en:r[0],tag:r[1],zh:r[2],ex:r[3]}));
-  const p=PHRASES.map((r,i)=>({id:"p"+i,type:"phrase",tag:r[0],en:r[1],zh:r[2],ex:""}));
-  return w.concat(p,custom);
-}
+const BASE=[];
+DAYS.forEach((d,n)=>{
+  d.w.forEach((s,i)=>{const f=s.split("|");BASE.push({id:"d"+(n+1)+"w"+i,day:n+1,type:"word",en:f[0],tag:f[1],zh:f[2],ex:f[3]})});
+  d.p.forEach((s,i)=>{const f=s.split("|");BASE.push({id:"d"+(n+1)+"p"+i,day:n+1,type:"phrase",tag:d.t,en:f[0],zh:f[1],ex:""})});
+});
+function allItems(){return BASE.concat(custom)}
+const curDay=()=>Math.min(DAYS.length,Math.max(1,settings.day||1));
+const inToday=i=>i.day===curDay();
+const learned=i=>i.day&&i.day<=curDay();
 const byId=id=>allItems().find(x=>x.id===id);
 const isMine=it=>it.id.charAt(0)==="c";
 
@@ -787,12 +1475,18 @@ $("qLib").oninput=renderLib;
 function renderLib(){
   const q=$("qLib").value.trim().toLowerCase();
   const type=settings.lib==="phrases"?"phrase":"word";
-  const items=allItems().filter(i=>i.type===type&&match(i,q));
+  const d=curDay();
+  $("libTitle").textContent="第 "+d+" 天 · "+DAYS[d-1].t;
   let html="";
-  if(type==="word")html=items.map(i=>rowHTML(i)).join("");
-  else{
-    const g={};items.forEach(i=>{const k=isMine(i)?(i.tag||"我加的"):i.tag;(g[k]=g[k]||[]).push(i)});
+  if(q){
+    // search every day, grouped by day
+    const items=allItems().filter(i=>i.type===type&&match(i,q));
+    const g={};items.forEach(i=>{const k=i.day?"第 "+i.day+" 天 · "+DAYS[i.day-1].t:"我加的";(g[k]=g[k]||[]).push(i)});
     html=Object.keys(g).map(k=>`<div class="cathead">${esc(k)}</div>`+g[k].map(i=>rowHTML(i)).join("")).join("");
+    $("libLede").textContent="在全部 "+DAYS.length+" 天里搜索「"+q+"」。";
+  }else{
+    html=allItems().filter(i=>i.type===type&&inToday(i)).map(i=>rowHTML(i)).join("");
+    $("libLede").textContent="今天 50 个单词、20 个常用句。点 ▶ 听读音，点例句听整句。搜索会查全部 "+DAYS.length+" 天。";
   }
   $("listLib").innerHTML=html||`<div class="empty">没有找到「${esc(q)}」</div>`;
 }
@@ -843,8 +1537,9 @@ const isTyped=c=>/[a-z0-9' ]/i.test(c);
 let queue=[],cur=null,target="",mode="type",hintMask=new Set(),missedThis=false;
 function pool(src){
   const all=allItems();
-  if(src==="words")return all.filter(i=>i.type==="word"&&!isMine(i));
-  if(src==="phrases")return all.filter(i=>i.type==="phrase"&&!isMine(i));
+  if(src==="today")return all.filter(i=>inToday(i)&&i.type==="word");
+  if(src==="todayP")return all.filter(i=>inToday(i)&&i.type==="phrase");
+  if(src==="review")return all.filter(learned);
   if(src==="mine")return all.filter(isMine);
   return all.filter(i=>wrong[i.id]);
 }
@@ -876,7 +1571,7 @@ function next(){
   target=normalize(cur.en);mode="type";hintMask=new Set();missedThis=false;
   $("typer").value="";$("checkBtn").textContent="检查";
   renderMeaning();renderSlots();updateScore();
-  setTimeout(()=>speak(cur.en),150);
+  if(curTab==="practice")setTimeout(()=>speak(cur.en),150);
   focusTyper();
 }
 function typedTarget(){return [...target].filter(isTyped).join("")}
@@ -973,7 +1668,8 @@ function rainPool(){
   const all=allItems().filter(i=>i.en.length<=22);
   if(settings.rainSrc==="mine")return all.filter(isMine);
   if(settings.rainSrc==="wrong")return all.filter(i=>wrong[i.id]);
-  return all.filter(i=>i.type==="word");
+  if(settings.rainSrc==="review")return all.filter(i=>learned(i)&&i.type==="word");
+  return all.filter(i=>inToday(i)&&i.type==="word");
 }
 function hud(){
   $("rScore").textContent=rain.score;$("rLevel").textContent=rain.level;
@@ -1125,11 +1821,13 @@ seg("clozeSrcSeg","clozeSrc",clozeStart);
 function makeCloze(item){
   const text=item.type==="phrase"?item.en:item.ex;if(!text)return null;
   const parts=text.split(/(\s+)/),cands=[];
-  parts.forEach((p,i)=>{const m=p.match(/^([^A-Za-z']*)([A-Za-z][A-Za-z'’]*)([^A-Za-z']*)$/);if(m)cands.push({i,pre:m[1],core:m[2],post:m[3]})});
+  parts.forEach((p,i)=>{const m=p.match(/^([^A-Za-z']*)([A-Za-z][A-Za-z'’&-]*[A-Za-z]|[A-Za-z])([^A-Za-z']*)$/);if(m)cands.push({i,pre:m[1],core:m[2],post:m[3]})});
   let pick=null;
   if(item.type!=="phrase"){
-    const w=item.en.toLowerCase();
-    pick=cands.find(c=>{const t=c.core.toLowerCase();let k=0;while(k<t.length&&k<w.length&&t[k]===w[k])k++;return t===w||(k>=4&&k>=Math.min(t.length,w.length)-2)});
+    const w=item.en.toLowerCase().split(" ")[0];
+    const stem=w.length>3&&w.endsWith("e")?w.slice(0,-1):w;
+    pick=cands.find(c=>{const t=c.core.toLowerCase().replace(/['’].*/,"");let k=0;while(k<t.length&&k<w.length&&t[k]===w[k])k++;
+      return t===w||(stem.length>=3&&t.startsWith(stem)&&t.length-stem.length<=4)||(k>=4&&k>=Math.min(t.length,w.length)-2)});
   }
   if(!pick){
     const good=cands.filter(c=>c.core.length>=3&&!STOP.has(c.core.toLowerCase().replace(/['’].*/,"")));
@@ -1141,7 +1839,7 @@ function makeCloze(item){
 function clozePool(){
   const all=allItems();
   const s=settings.clozeSrc;
-  return all.filter(i=>(i.type==="phrase"||i.ex)&&(s==="all"||(s==="words"&&i.type==="word"&&!isMine(i))||(s==="phrases"&&i.type==="phrase"&&!isMine(i))||(s==="mine"&&isMine(i))));
+  return all.filter(i=>(i.type==="phrase"||i.ex)&&((s==="today"&&inToday(i))||(s==="review"&&learned(i))||(s==="mine"&&isMine(i))));
 }
 function clozeStart(){
   const p=shuffle(clozePool()).slice(0,10).map(makeCloze).filter(Boolean);
@@ -1304,6 +2002,18 @@ function finishScene(){
   $("talkAgain").onclick=()=>startScene(s.id);
   $("talkList").onclick=()=>$("talkBack").click();
 }
+
+/* ================= day picker ================= */
+$("daySel").innerHTML=DAYS.map((d,i)=>`<option value="${i+1}">第 ${i+1} 天 · ${esc(d.t)}</option>`).join("");
+$("daySel").value=String(curDay());
+$("daySel").onchange=e=>{
+  settings.day=+e.target.value;saveSettings();
+  buildQueue();next();
+  if(!rain.running)rainShowIdle();
+  cz.q=[];if(curTab==="cloze")clozeStart();
+  if(curTab==="library")renderLib();
+  toast("已切换到第 "+settings.day+" 天："+DAYS[settings.day-1].t);
+};
 
 /* ================= boot ================= */
 buildQueue();
