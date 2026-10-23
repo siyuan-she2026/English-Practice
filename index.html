@@ -98,6 +98,7 @@ h2{font-family:var(--f-display);font-weight:700;font-size:1.6rem;letter-spacing:
 .slot.ok{color:var(--ok);border-bottom-color:var(--ok)}
 .slot.no{color:var(--bad);border-bottom-color:var(--bad)}
 .slot.hint{color:var(--muted)}
+.slot.case{border-bottom-style:dashed}
 .slot.punct{border-bottom-color:transparent;color:var(--muted);width:.6em}
 #typer{position:absolute;inset:0;opacity:0;width:100%;height:100%;border:0;font-size:16px}
 
@@ -226,7 +227,7 @@ h3{font-family:var(--f-display);font-size:1.1rem;margin:28px 0 10px}
         <div class="keys"><span><kbd>Enter</kbd> 检查 / 下一个</span><span><kbd>Esc</kbd> 重听</span><span><kbd>Tab</kbd> 提示</span></div>
       </div>
     </div>
-    <p class="note">点击上面的格子就能打字。拼错了会显示正确答案，要再正确打一遍才算过。错过的会自动进「错题本」。</p>
+    <p class="note">点击上面的格子就能打字。拼错了会显示正确答案，要再正确打一遍才算过。错过的会自动进「错题本」。拼写区分大小写，比如 Wednesday、I'm 要用大写。</p>
   </section>
 
   <!-- WORDS -->
@@ -482,7 +483,7 @@ let tt;
 function toast(msg){const t=$("toast");t.textContent=msg;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>t.hidden=true,2400)}
 
 /* ---------- practice ---------- */
-const normalize=s=>s.replace(/[’‘]/g,"'").toLowerCase();
+const normalize=s=>s.replace(/[’‘]/g,"'");
 const isTyped=c=>/[a-z0-9' ]/i.test(c);
 let queue=[],cur=null,target="",typedLen=0,mode="type",hintMask=new Set(),missedThis=false;
 
@@ -547,7 +548,7 @@ function renderSlots(){
     const typed=val[ti];
     let cls="slot",show="&nbsp;";
     if(mode==="reveal-retype"&&typed===undefined){show=`<span style="opacity:.28">${esc(ch)}</span>`}
-    if(typed!==undefined){show=esc(typed===" "?"·":typed);cls+=typed===n?" ok":" no"}
+    if(typed!==undefined){show=esc(typed===" "?"·":typed);cls+=typed===n?" ok":(typed.toLowerCase()===n.toLowerCase()?" no case":" no")}
     else if(hintMask.has(ti)){show=esc(ch);cls+=" hint"}
     if(ti===val.length)cls+=" cur";
     grp+=`<span class="${cls}">${show}</span>`;
@@ -611,6 +612,10 @@ function check(){
     return;
   }
   $("typebox").classList.remove("badx");void $("typebox").offsetWidth;$("typebox").classList.add("badx");
+  if(val.length===tt.length&&val.toLowerCase()===tt.toLowerCase()){
+    fb.textContent="字母都对了，注意大小写（虚线下划线的字母）。按 Shift 打大写。";fb.className="feedback no";
+    focusTyper();return;
+  }
   if(mode==="type"){
     if(!missedThis)record(false);
     missedThis=true;
