@@ -2218,7 +2218,7 @@ const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",
 const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 const localDay=(d=new Date())=>{const z=n=>String(n).padStart(2,"0");return d.getFullYear()+"-"+z(d.getMonth()+1)+"-"+z(d.getDate())};
 const today=localDay();
-const loose=s=>String(s).replace(/[’‘]/g,"'").toLowerCase().replace(/[^a-z0-9' ]/g," ").replace(/\s+/g," ").trim();
+const loose=s=>String(s).normalize("NFKC").replace(/[’‘]/g,"'").toLowerCase().replace(/[^a-z0-9' ]/g," ").replace(/\s+/g," ").trim();
 const SPK='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
 
 let custom=store.get("vb.custom",[]);
@@ -2501,7 +2501,7 @@ $("copyAll").onclick=()=>{
 };
 
 /* ================= spelling ================= */
-const normalize=s=>s.replace(/[’‘]/g,"'");
+const normalize=s=>String(s).normalize("NFKC").replace(/[’‘]/g,"'").replace(/[\u00A0\u3000]/g," ");
 const isTyped=c=>/[a-z0-9' ]/i.test(c);
 let queue=[],cur=null,target="",mode="type",hintMask=new Set(),missedThis=false;
 function pool(src){
@@ -2569,14 +2569,18 @@ function focusTyper(){if(curTab==="practice")setTimeout(()=>{try{$("typer").focu
 $("typebox").onclick=focusTyper;
 $("typer").onfocus=()=>$("typebox").classList.add("focus");
 $("typer").onblur=()=>$("typebox").classList.remove("focus");
-$("typer").oninput=()=>{
+function typerInput(e){
+  if(e&&e.isComposing)return;
   const tt=typedTarget();
-  let v=[...$("typer").value.replace(/[’‘]/g,"'")].filter(isTyped).join("");
+  let v=[...normalize($("typer").value)].filter(isTyped).join("");
   if(v.length>tt.length)v=v.slice(0,tt.length);
   $("typer").value=v;$("typebox").classList.remove("badx","good");renderSlots();
-};
+}
+$("typer").addEventListener("input",typerInput);
+$("typer").addEventListener("compositionend",()=>setTimeout(typerInput,0));
 $("typer").onkeydown=e=>{
-  if(e.key==="Enter"){e.preventDefault();check()}
+  if(e.isComposing||e.keyCode===229)return; // Enter here only confirms the input method's text
+  if(e.key==="Enter"){e.preventDefault();typerInput();check()}
   else if(e.key==="Escape"){e.preventDefault();cur&&speak(cur.en)}
   else if(e.key==="Tab"){e.preventDefault();hint()}
 };
@@ -2764,6 +2768,7 @@ rIn.addEventListener("input",()=>{
   paintLocks(v.replace(/^ /,""));
 });
 rIn.addEventListener("keydown",e=>{
+  if(e.isComposing||e.keyCode===229)return;
   if(e.key==="Escape"){rIn.value="";paintLocks("")}
   if(e.key==="Enter"){
     e.preventDefault();
@@ -2869,6 +2874,7 @@ function clozeShow(){
   $("cFeedback").textContent="";$("cFeedback").className="feedback";$("cCheck").textContent="检查";
   $("cIn").addEventListener("input",e=>e.target.classList.remove("no","badx"));
   $("cIn").addEventListener("keydown",e=>{
+    if(e.isComposing||e.keyCode===229)return;
     if(e.key==="Enter"){e.preventDefault();clozeCheck()}
     if(e.key==="Escape"){e.preventDefault();speak(c.text)}
   });
@@ -2977,7 +2983,7 @@ function runTurn(){
       fb.className="feedback no";
       fb.textContent=talk.tries>=2?"参考答案："+right[0]+"　照着打一遍就能继续。":"还不太一样，再试一次，或者点「看参考答案」。";
     };
-    inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();go()}});
+    inp.addEventListener("keydown",e=>{if(e.isComposing||e.keyCode===229)return;if(e.key==="Enter"){e.preventDefault();go()}});
     $("talkGo").onclick=go;
     $("talkShow").onclick=()=>{if(talk.tries<1){talk.miss++;$("talkMiss").textContent=talk.miss}talk.tries=2;fb.className="feedback no";fb.textContent="参考答案："+right[0]+"　照着打一遍就能继续。";inp.focus()};
     setTimeout(()=>{try{inp.focus({preventScroll:true})}catch(e){}},50);
