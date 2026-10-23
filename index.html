@@ -242,6 +242,33 @@ kbd{font-family:var(--f-mono);font-size:.78rem;border:1px solid var(--line);bord
 .formgrid textarea{min-height:130px;font-family:var(--f-mono);font-size:.9rem}
 h3.sub{font-family:var(--f-display);font-size:1.1rem;margin:28px 0 10px}
 
+.lw{cursor:pointer;border-radius:3px;text-decoration:underline dotted color-mix(in srgb,var(--muted) 45%,transparent);text-underline-offset:4px}
+.lw:hover{background:var(--mark);text-decoration-color:transparent}
+.exline{display:flex;gap:6px;align-items:flex-start;color:var(--muted);font-size:.95rem;font-style:italic}
+.exline .say{flex:none;width:24px;height:24px;border-radius:50%;border:0;background:var(--accent-soft);color:var(--ink);display:grid;place-items:center;margin-top:1px}
+.exline .say svg{width:11px;height:11px}
+.look{display:flex;align-items:center}
+.look input{width:9.5em;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:4px 12px;font-size:.9rem}
+.look input:focus{border-color:var(--accent);outline:none}
+.dict{position:fixed;z-index:15;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));width:min(400px,calc(100% - 32px));max-height:min(70vh,560px);overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 40px rgba(10,30,40,.18);padding:16px 18px;display:grid;gap:12px}
+.dict-head{display:flex;align-items:flex-start;gap:10px}
+.dict-head .hw{flex:1;min-width:0}
+.dict-head b{font-family:var(--f-display);font-size:1.6rem;letter-spacing:-.01em;overflow-wrap:anywhere}
+.dict-head .ph{font-family:var(--f-mono);font-size:.85rem;color:var(--muted);display:block}
+.iconbtn{flex:none;width:36px;height:36px;border-radius:50%;border:0;background:var(--accent-soft);color:var(--ink);display:grid;place-items:center;font-size:1.2rem;line-height:1}
+.iconbtn svg{width:15px;height:15px}
+.iconbtn.close{background:transparent;color:var(--muted)}
+.dsec{display:grid;gap:4px}
+.dsec .lbl{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.dsec .zhbig{font-size:1.15rem;font-weight:700;font-family:"Noto Sans SC",var(--f-body)}
+.dsec .src{font-size:.78rem;color:var(--muted);font-weight:400}
+.dsec ol{margin:0;padding-left:1.2em;display:grid;gap:6px}
+.dsec li{font-size:.95rem}
+.dsec .dex{color:var(--muted);font-style:italic;font-size:.9rem}
+.dsec .rel{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:6px 10px;text-align:left;font-size:.92rem}
+.dict .muted{color:var(--muted);font-size:.9rem}
+.dict a.btn{text-decoration:none;color:var(--ink)}
+@media (max-width:640px){.dict{right:0;left:0;bottom:0;width:100%;border-radius:14px 14px 0 0;padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px));padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}.look input{width:100%}.look{flex:1 1 100%}}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-weight:700;font-size:.92rem;z-index:20;max-width:calc(100% - 32px);text-align:center}
 .toast.gold{background:var(--flame);color:#fff}
 
@@ -282,6 +309,7 @@ h3.sub{font-family:var(--f-display);font-size:1.1rem;margin:28px 0 10px}
       </select>
     </label>
     <label>语速 <input id="rate" type="range" min="0.5" max="1.3" step="0.05" value="0.9"> <span class="num" id="rateOut">0.90×</span></label>
+    <form class="look" id="lookForm" role="search"><input id="lookIn" type="search" placeholder="查单词" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="查单词"></form>
     <span id="voiceWarn" class="warn" hidden>这个浏览器不支持朗读，请换 Chrome、Edge 或 Safari。</span>
     <div class="prog">
       <span class="streak" id="streakBox" title="连续学习天数"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 1.5s.8 2.9.8 5.2c0 2.2-1.4 4-3.6 4-2.2 0-3.8-1.8-3.8-4l.03-.4C4.8 9 3.5 12.3 3.5 15.5 3.5 20.2 7.3 24 12 24s8.5-3.8 8.5-8.5C20.5 9.4 17.6 4.4 13.5 1.5zM11.7 21c-1.9 0-3.4-1.5-3.4-3.3 0-1.7 1.1-2.9 2.9-3.3 1.9-.4 3.8-1.3 4.9-2.7.4 1.4.6 2.8.6 4.3 0 2.8-2.2 5-5 5z"/></svg><span class="num" id="pStreak">0</span> 天</span>
@@ -468,6 +496,15 @@ I'm fed up with it. | 我受够了。"></textarea>
   </section>
 </main>
 
+<div class="dict" id="dict" role="dialog" aria-label="查词结果" hidden>
+  <div class="dict-head">
+    <div class="hw"><b id="dWord"></b><span class="ph" id="dPhon"></span></div>
+    <button class="iconbtn" id="dSay" aria-label="播放读音"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
+    <button class="iconbtn close" id="dClose" aria-label="关闭">×</button>
+  </div>
+  <div id="dBody"></div>
+  <div class="actions"><button class="btn primary" id="dAdd">加入我的词库</button><a class="btn" id="dCam" target="_blank" rel="noopener">剑桥词典</a></div>
+</div>
 <div class="toast" id="toast" hidden></div>
 
 <script>
@@ -1453,15 +1490,24 @@ function seg(id,key,onChange){
   paint();
 }
 
+/* ================= clickable words ================= */
+const WORD_RE=/[A-Za-z][A-Za-z'’&-]*[A-Za-z]|[A-Za-z]/g;
+function tok(t){
+  t=String(t||"");let out="",last=0;
+  t.replace(WORD_RE,(m,off)=>{out+=esc(t.slice(last,off))+`<span class="lw">${esc(m)}</span>`;last=off+m.length;return m});
+  return out+esc(t.slice(last));
+}
+const exLine=ex=>`<div class="exline" data-ctx="${esc(ex)}"><button class="say" data-say="${esc(ex)}" aria-label="播放例句">${SPK}</button><span>${tok(ex)}</span></div>`;
+
 /* ================= library & add ================= */
 function rowHTML(it,opts){
   const wc=wrong[it.id];
   return `<div class="row">
     <button class="mini" data-say="${esc(it.en)}" aria-label="播放 ${esc(it.en)}">${SPK}</button>
     <div class="txt">
-      <div class="enw">${esc(it.en)}${it.type==="word"&&it.tag?`<span class="tag">${esc(it.tag)}</span>`:""}</div>
+      <div class="enw" data-ctx="${esc(it.en)}">${it.type==="phrase"?tok(it.en):esc(it.en)}${it.type==="word"&&it.tag?`<span class="tag">${esc(it.tag)}</span>`:""}</div>
       <div class="zh">${esc(it.zh)}</div>
-      ${it.ex?`<button class="ex" data-say="${esc(it.ex)}">${esc(it.ex)}</button>`:""}
+      ${it.ex?exLine(it.ex):""}
     </div>
     <div class="side">
       ${wc?`<span class="badge">错 ${wc} 次</span>`:""}
@@ -1486,7 +1532,7 @@ function renderLib(){
     $("libLede").textContent="在全部 "+DAYS.length+" 天里搜索「"+q+"」。";
   }else{
     html=allItems().filter(i=>i.type===type&&inToday(i)).map(i=>rowHTML(i)).join("");
-    $("libLede").textContent="今天 50 个单词、20 个常用句。点 ▶ 听读音，点例句听整句。搜索会查全部 "+DAYS.length+" 天。";
+    $("libLede").textContent="今天 50 个单词、20 个常用句。点 ▶ 听读音，点句子里任意一个单词可以查词。搜索会查全部 "+DAYS.length+" 天。";
   }
   $("listLib").innerHTML=html||`<div class="empty">没有找到「${esc(q)}」</div>`;
 }
@@ -1495,6 +1541,9 @@ function renderMine(){
   $("listMine").innerHTML=custom.length?custom.slice().reverse().map(i=>rowHTML(i,{del:true})).join(""):`<div class="empty">还没有添加。用上面的表格加第一个词吧。</div>`;
 }
 document.addEventListener("click",e=>{
+  const lw=e.target.closest(".lw");
+  if(lw){e.preventDefault();const c=lw.closest("[data-ctx]");lookup(lw.textContent,c?c.dataset.ctx:"");return}
+  if(!$("dict").hidden&&!e.target.closest("#dict")&&!e.target.closest("#lookForm"))closeDict();
   const s=e.target.closest("[data-say]");if(s){speak(s.dataset.say);return}
   const d=e.target.closest("[data-del]");
   if(d){
@@ -1645,7 +1694,7 @@ function check(){
   }else{fb.textContent="还不对，照着淡色的字母再打一遍。";fb.className="feedback no"}
   focusTyper();
 }
-function showAnswer(){$("ansText").textContent=cur.en;$("ansEx").textContent=cur.ex||"";$("reveal").hidden=false}
+function showAnswer(){$("ansText").textContent=cur.en;$("ansEx").innerHTML=cur.ex?`<span data-ctx="${esc(cur.ex)}">${tok(cur.ex)}</span>`:"";$("reveal").hidden=false}
 $("checkBtn").onclick=()=>{check();focusTyper()};
 $("hintBtn").onclick=hint;
 $("skipBtn").onclick=()=>next();
@@ -1862,7 +1911,8 @@ function clozeShow(){
   const c=cz.cur=cz.q[cz.i];cz.state="ask";cz.tries=0;
   $("cIdx").textContent=cz.i+1;$("cOk").textContent=cz.ok;
   $("cDots").innerHTML=cz.q.map((_,k)=>`<i class="${cz.res[k]===true?"ok":cz.res[k]===false?"no":""} ${k===cz.i?"cur":""}"></i>`).join("");
-  $("cSentence").innerHTML=c.parts.map((p,k)=>k===c.pick.i?`${esc(c.pick.pre)}<input class="blank" id="cIn" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="填空" style="width:${c.pick.core.length+2}ch">${esc(c.pick.post)}`:esc(p)).join("");
+  $("cSentence").innerHTML=c.parts.map((p,k)=>k===c.pick.i?`${esc(c.pick.pre)}<input class="blank" id="cIn" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="填空" style="width:${c.pick.core.length+2}ch">${esc(c.pick.post)}`:tok(p)).join("");
+  $("cSentence").dataset.ctx=c.text;
   clozeHint();
   $("cFeedback").textContent="";$("cFeedback").className="feedback";$("cCheck").textContent="检查";
   $("cIn").addEventListener("input",e=>e.target.classList.remove("no","badx"));
@@ -1937,7 +1987,7 @@ $("talkBack").onclick=()=>{clearTimeout(talk.timer);talk.scene=null;try{synth&&s
 function bubble(who,en,zh){
   const b=document.createElement("div");b.className="bubble "+who;
   b.innerHTML=`<span class="who">${who==="npc"?"对方":"你"}</span>
-    <div class="line"><button class="say" data-say="${esc(en)}" aria-label="播放">${SPK}</button><span>${esc(en)}</span></div>
+    <div class="line"><button class="say" data-say="${esc(en)}" aria-label="播放">${SPK}</button><span data-ctx="${esc(en)}">${tok(en)}</span></div>
     ${zh?`<button class="trbtn">译</button><span class="tr" hidden>${esc(zh)}</span>`:""}`;
   const tb=b.querySelector(".trbtn");if(tb)tb.onclick=()=>{b.querySelector(".tr").hidden=false;tb.remove()};
   $("chat").appendChild(b);b.scrollIntoView({block:"nearest",behavior:"smooth"});
@@ -2002,6 +2052,129 @@ function finishScene(){
   $("talkAgain").onclick=()=>startScene(s.id);
   $("talkList").onclick=()=>$("talkBack").click();
 }
+
+/* ================= word lookup ================= */
+const dictState={word:"",ctx:"",net:null,local:null};
+const netCache={};
+function lemmas(w){
+  const out=[w];
+  const add=x=>{if(x&&x.length>1&&!out.includes(x))out.push(x)};
+  if(/'s$/.test(w))add(w.slice(0,-2));
+  if(/ies$/.test(w))add(w.slice(0,-3)+"y");
+  if(/ied$/.test(w))add(w.slice(0,-3)+"y");
+  if(/es$/.test(w))add(w.slice(0,-2));
+  if(/s$/.test(w)&&!/ss$/.test(w))add(w.slice(0,-1));
+  if(/ed$/.test(w)){add(w.slice(0,-2));add(w.slice(0,-1))}
+  if(/ing$/.test(w)){add(w.slice(0,-3));add(w.slice(0,-3)+"e")}
+  const dbl=w.match(/^(.*([b-df-hj-np-tv-z]))\2(ed|ing)$/);if(dbl)add(dbl[1]);
+  if(/ier$/.test(w))add(w.slice(0,-3)+"y");
+  if(/iest$/.test(w))add(w.slice(0,-4)+"y");
+  return out;
+}
+function localMatch(word){
+  const c=lemmas(word.toLowerCase());
+  const items=allItems();
+  const exact=items.find(i=>c.includes(i.en.toLowerCase()));
+  let related=[];
+  if(!STOP.has(c[0])){
+    related=items.filter(i=>i!==exact&&i.type==="word"&&/[ -]/.test(i.en)&&i.en.toLowerCase().split(/[ -]/).some(t=>c.includes(t))).slice(0,4);
+  }
+  return {exact,related};
+}
+async function getJSON(url){
+  const ctl=typeof AbortController!=="undefined"?new AbortController():null;
+  const t=setTimeout(()=>ctl&&ctl.abort(),7000);
+  try{const r=await fetch(url,ctl?{signal:ctl.signal}:{});if(!r.ok)return null;return await r.json()}
+  catch(e){return null}finally{clearTimeout(t)}
+}
+async function netLookup(word){
+  const key=word.toLowerCase();
+  if(netCache[key])return netCache[key];
+  const zhP=getJSON("https://api.mymemory.translated.net/get?q="+encodeURIComponent(key)+"&langpair=en|zh-CN");
+  let entry=null;
+  for(const cand of lemmas(key).slice(0,5)){
+    const j=await getJSON("https://api.dictionaryapi.dev/api/v2/entries/en/"+encodeURIComponent(cand));
+    if(Array.isArray(j)&&j.length){entry=j;break}
+  }
+  const zhJ=await zhP;
+  let zh=zhJ&&zhJ.responseData&&zhJ.responseData.translatedText||"";
+  if(!zh||/MYMEMORY|INVALID|QUERY LENGTH/i.test(zh)||zh.toLowerCase()===key)zh="";
+  if(!entry&&!zh)return null;
+  const res={word:entry?entry[0].word:key,phonetic:"",meanings:[],zh};
+  if(entry){
+    for(const e of entry){
+      if(!res.phonetic)res.phonetic=e.phonetic||((e.phonetics||[]).find(p=>p.text)||{}).text||"";
+      for(const m of e.meanings||[]){
+        if(res.meanings.length>=3)break;
+        if(res.meanings.some(x=>x.pos===m.partOfSpeech))continue;
+        res.meanings.push({pos:m.partOfSpeech,defs:(m.definitions||[]).slice(0,2).map(d=>({d:d.definition,ex:d.example||""}))});
+      }
+    }
+  }
+  netCache[key]=res;return res;
+}
+const POS_ABBR={noun:"n.",verb:"v.",adjective:"adj.",adverb:"adv.",preposition:"prep.",conjunction:"conj.",interjection:"interj.",pronoun:"pron."};
+function closeDict(){$("dict").hidden=true}
+async function lookup(raw,ctx){
+  const word=String(raw||"").replace(/[’]/g,"'").replace(/^['-]+|['-]+$/g,"").trim();
+  if(!word)return;
+  Object.assign(dictState,{word,ctx:ctx||"",net:null,local:localMatch(word),loading:true});
+  $("dict").hidden=false;renderDict();
+  const net=await netLookup(word);
+  if(dictState.word!==word)return;
+  dictState.net=net;dictState.loading=false;renderDict();
+}
+function renderDict(){
+  const {word,ctx,net,local,loading}=dictState;
+  const head=local.exact?local.exact.en:(net&&net.word)||word;
+  $("dWord").textContent=head;
+  $("dPhon").textContent=net&&net.phonetic||"";
+  $("dCam").href="https://dictionary.cambridge.org/dictionary/english-chinese-simplified/"+encodeURIComponent(head.toLowerCase().replace(/ /g,"-"));
+  let h="";
+  if(local.exact){
+    const it=local.exact;
+    h+=`<div class="dsec"><span class="lbl">${it.day?"你的词表 · 第 "+it.day+" 天":"我加的词"}</span>
+      <div class="zhbig">${esc(it.zh)} <span class="src">${it.type==="word"?esc(it.tag||""):"短语"}</span></div>
+      ${it.ex?exLine(it.ex):""}</div>`;
+  }else if(net&&net.zh){
+    h+=`<div class="dsec"><span class="lbl">中文</span><div class="zhbig">${esc(net.zh)} <span class="src">机器翻译，仅供参考</span></div></div>`;
+  }
+  if(local.related.length){
+    h+=`<div class="dsec"><span class="lbl">词表里相关的</span>${local.related.map(r=>`<button class="rel" data-look="${esc(r.en)}"><b>${esc(r.en)}</b> · ${esc(r.zh)}</button>`).join("")}</div>`;
+  }
+  if(net&&net.meanings.length){
+    h+=`<div class="dsec"><span class="lbl">英文释义</span>`+net.meanings.map(m=>`<div><span class="src">${esc(m.pos)}</span><ol>${m.defs.map(d=>`<li>${tok(d.d)}${d.ex?`<div class="dex" data-ctx="${esc(d.ex)}">${tok(d.ex)}</div>`:""}</li>`).join("")}</ol></div>`).join("")+`</div>`;
+  }
+  if(ctx&&!local.exact){
+    h+=`<div class="dsec"><span class="lbl">你点的这句</span>${exLine(ctx)}</div>`;
+  }
+  if(loading)h+=`<div class="muted">正在查在线词典…</div>`;
+  else if(!net&&!local.exact)h+=`<div class="muted">没有查到在线释义。可能是没联网，或者在预览页里（预览页不能联网查词，GitHub 上的网站可以）。点下面「剑桥词典」查看。</div>`;
+  $("dBody").innerHTML=h;
+  const exists=!!local.exact||allItems().some(i=>i.en.toLowerCase()===head.toLowerCase());
+  const add=$("dAdd");
+  add.disabled=exists||loading&&!local.exact;
+  add.textContent=exists?"已在词库里":loading?"查询中…":"加入我的词库";
+}
+$("dClose").onclick=closeDict;
+$("dSay").onclick=()=>speak($("dWord").textContent);
+$("dBody").addEventListener("click",e=>{const r=e.target.closest("[data-look]");if(r){e.stopPropagation();lookup(r.dataset.look,"")}});
+$("dAdd").onclick=()=>{
+  const {word,ctx,net}=dictState;
+  const en=net&&net.word||word.toLowerCase();
+  const first=net&&net.meanings[0];
+  const zh=net&&net.zh||(first&&first.defs[0]?first.defs[0].d.slice(0,60):"");
+  if(!zh){toast("没有查到释义，可以去「添加」页手动加");return}
+  const lw=lemmas(word.toLowerCase());
+  const ctxOk=ctx&&lw.some(l=>ctx.toLowerCase().includes(l));
+  const ex=ctxOk?ctx:(first&&first.defs.find(d=>d.ex)||{}).ex||"";
+  if(addItem(en,zh,"word",first?POS_ABBR[first.pos]||first.pos:"",ex)){
+    store.set("vb.custom",custom);toast("已加入「我加的」，所有玩法都能练");
+    if(curTab==="mine")renderMine();renderDict();
+  }else toast("这个词已经在词库里了");
+};
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("dict").hidden)closeDict()});
+$("lookForm").onsubmit=e=>{e.preventDefault();const v=$("lookIn").value.trim();if(v){lookup(v,"");$("lookIn").select()}};
 
 /* ================= day picker ================= */
 $("daySel").innerHTML=DAYS.map((d,i)=>`<option value="${i+1}">第 ${i+1} 天 · ${esc(d.t)}</option>`).join("");
