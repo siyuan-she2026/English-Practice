@@ -327,6 +327,12 @@ h3.sub{font-family:var(--f-display);font-size:1.1rem;margin:28px 0 10px}
 .askbtn{margin-top:8px}
 .askmini{border:1px solid var(--line);background:transparent;border-radius:999px;padding:2px 9px;font-size:.75rem;font-weight:700;color:var(--accent);white-space:nowrap}
 .askmini:hover{border-color:var(--accent)}
+.aiact{margin-top:10px;padding-top:8px;border-top:1px dashed var(--line)}
+.note{display:grid;gap:8px;padding:16px;border-top:1px solid var(--line)}
+.note .aiq{justify-self:start}
+.note .nw{font-size:.85rem;color:var(--muted)}
+.note .nw b{color:var(--ink)}
+.note .nt{margin-left:auto;font-size:.8rem;color:var(--muted)}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-weight:700;font-size:.92rem;z-index:20;max-width:calc(100% - 32px);text-align:center}
 .toast.gold{background:var(--flame);color:#fff}
 
@@ -2236,6 +2242,8 @@ let stats=store.get("vb.stats",{date:today,done:0,ok:0});
 if(stats.date!==today)stats={date:today,done:0,ok:0};
 const saveWrong=()=>{store.set("vb.wrong",wrong);updWrongCount();if(typeof curTab!=="undefined"&&curTab==="wrong")renderWrong()};
 let fav=store.get("vb.fav",{});
+let aiNotes=store.get("vb.ainotes",[]);   // saved AI answers: {id,t,ctx,q,a}
+const saveNotes=()=>store.set("vb.ainotes",aiNotes);
 const isFav=id=>!!fav[id];
 const STAR='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg>';
 const starBtn=(id,labeled)=>id?`<button class="star${labeled?" labeled":""}${isFav(id)?" on":""}" data-fav="${id}" aria-pressed="${isFav(id)}" aria-label="收藏" title="${isFav(id)?"取消收藏":"收藏"}">${STAR}${labeled?`<span class="sl">${isFav(id)?"已收藏":"收藏"}</span>`:""}</button>`:"";
@@ -2427,6 +2435,17 @@ function rowHTML(it,opts){
       ${opts&&opts.unwrong?`<button class="del" data-unwrong="${it.id}">移出</button>`:""}
     </div></div>`;
 }
+function noteHTML(n){
+  const c=n.ctx||{};
+  const d=new Date(n.t);const when=(d.getMonth()+1)+"月"+d.getDate()+"日";
+  return `<div class="note">
+    ${c.sentence?exLine(c.sentence,c.zh):""}
+    ${c.word?`<div class="nw">重点词：<b>${esc(c.word)}</b>${c.wordZh?" · "+esc(c.wordZh):""}</div>`:""}
+    <div class="aiq">${esc(n.q)}</div>
+    <div class="aia">${md(n.a)}</div>
+    <div class="actions"><button class="star labeled on" data-unnote="${n.id}" aria-pressed="true" title="取消收藏">${STAR}<span class="sl">已收藏</span></button>${c.sentence?`<button class="btn" data-noteask="${n.id}">接着问</button>`:""}<span class="nt">${when}</span></div>
+  </div>`;
+}
 const match=(it,q)=>!q||it.en.toLowerCase().includes(q)||it.zh.includes(q);
 seg("libSeg","lib",renderLib);
 $("structTog").checked=settings.struct;
@@ -2439,10 +2458,15 @@ function renderLib(){
   const d=curDay();
   if(settings.lib==="fav"){
     const items=allItems().filter(i=>isFav(i.id)&&match(i,q)).sort((a,b)=>fav[b.id]-fav[a.id]);
+    const ql=q.toLowerCase();
+    const notes=aiNotes.filter(n=>!q||[n.ctx&&n.ctx.sentence,n.ctx&&n.ctx.zh,n.q,n.a].join(" ").toLowerCase().includes(ql));
     $("libTitle").textContent="我的收藏";
-    $("libLede").textContent=items.length?"一共 "+Object.keys(fav).filter(id=>byId(id)).length+" 个，最近收藏的在前面。拼写、单词雨、听句填空都可以选「收藏」来复习。":"";
+    $("libLede").textContent=(items.length||notes.length)?"AI 回答 "+aiNotes.length+" 条，单词和短语 "+Object.keys(fav).filter(id=>byId(id)).length+" 个，最近收藏的在前面。拼写、单词雨、听句填空都可以选「收藏」来复习单词和短语。":"";
     $("legend").hidden=!settings.struct;
-    $("listLib").innerHTML=items.map(i=>rowHTML(i)).join("")||`<div class="empty">${q?"收藏里没有「"+esc(q)+"」":"还没有收藏。点单词旁边的星标就能收藏，方便以后专门复习。"}</div>`;
+    let html="";
+    if(notes.length)html+=`<div class="cathead">收藏的 AI 回答</div>`+notes.map(noteHTML).join("");
+    if(items.length)html+=(notes.length?`<div class="cathead">单词和短语</div>`:"")+items.map(i=>rowHTML(i)).join("");
+    $("listLib").innerHTML=html||`<div class="empty">${q?"收藏里没有「"+esc(q)+"」":"还没有收藏。点单词旁边的星标，或者 AI 回答下面的「收藏这条回答」，就会出现在这里。"}</div>`;
     return;
   }
   $("libTitle").textContent="第 "+d+" 天 · "+DAYS[d-1].t;
@@ -2467,6 +2491,27 @@ function renderMine(){
 document.addEventListener("click",e=>{
   const fb=e.target.closest("[data-fav]");
   if(fb){const on=toggleFav(fb.dataset.fav);toast(on?"已收藏":"已取消收藏");if(curTab==="library"&&settings.lib==="fav"&&!on)renderLib();return}
+  const an=e.target.closest("[data-ainote]");
+  if(an){
+    const pnd=aiPending[an.dataset.ainote];if(!pnd)return;
+    const on=!pnd.saved;
+    if(on){pnd.saved="n"+Date.now().toString(36);aiNotes.unshift({id:pnd.saved,t:Date.now(),ctx:pnd.ctx,q:pnd.q,a:pnd.a})}
+    else{aiNotes=aiNotes.filter(n=>n.id!==pnd.saved);pnd.saved=null}
+    saveNotes();
+    an.classList.toggle("on",on);an.setAttribute("aria-pressed",on);an.querySelector(".sl").textContent=on?"已收藏这条回答":"收藏这条回答";
+    an.classList.remove("pop");if(on){void an.offsetWidth;an.classList.add("pop")}
+    toast(on?"已收藏，在「词库 → 收藏」里复习":"已取消收藏");
+    if(curTab==="library"&&settings.lib==="fav")renderLib();
+    return;
+  }
+  const nd=e.target.closest("[data-unnote]");
+  if(nd){
+    aiNotes=aiNotes.filter(n=>n.id!==nd.dataset.unnote);saveNotes();
+    Object.values(aiPending).forEach(p=>{if(p.saved===nd.dataset.unnote)p.saved=null});
+    renderLib();toast("已取消收藏这条回答");return;
+  }
+  const na=e.target.closest("[data-noteask]");
+  if(na){const n=aiNotes.find(x=>x.id===na.dataset.noteask);if(n&&n.ctx)openAI(n.ctx);return}
   const ab=e.target.closest("[data-ask]");
   if(ab){const it=byId(ab.dataset.ask);if(it)openAI(aiCtxFromItem(it));return}
   const uw=e.target.closest("[data-unwrong]");
@@ -3213,7 +3258,9 @@ function structPlain(sentence){
   const a=ANNMAP[sentence];if(!a)return "";
   return [...a.matchAll(/\[([A-Z]):([^\]]*)\]/g)].map(m=>ROLE[m[1]]+"："+m[2]).join("；");
 }
+let aiCurCtx=null;const aiPending={};
 function openAI(ctx){
+  aiCurCtx=ctx;
   closeDict();
   aiCtl&&aiCtl.abort();
   aiTurns=[];aiBusy=false;
@@ -3278,6 +3325,11 @@ async function aiAsk(q){
     }else text=await askAPI(turns,aiCtl.signal);
     aEl.classList.remove("wait");aEl.innerHTML=md(text);
     aiTurns=turns.concat({role:"assistant",content:text});
+    const key="p"+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+    aiPending[key]={ctx:aiCurCtx,q,a:text,saved:null};
+    const act=document.createElement("div");act.className="aiact";
+    act.innerHTML=`<button class="star labeled" data-ainote="${key}" aria-pressed="false">${STAR}<span class="sl">收藏这条回答</span></button>`;
+    aEl.appendChild(act);
   }catch(e){
     const aborted=(e&&e.code==="cancelled")||(e&&e.name==="AbortError");
     aEl.classList.remove("wait");
