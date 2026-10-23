@@ -172,6 +172,10 @@ kbd{font-family:var(--f-mono);font-size:.78rem;border:1px solid var(--line);bord
 .blank.no{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
 .zhhint{color:var(--muted)}
 .zhhint b{color:var(--ink);font-family:"Noto Sans SC",var(--f-body)}
+.peek{border:1px dashed var(--line);background:var(--bg);border-radius:8px;padding:6px 12px;color:var(--muted);font-size:.9rem}
+.peek:hover{border-color:var(--accent);color:var(--ink)}
+.peek .mask{display:inline-block;width:5em;height:.8em;vertical-align:middle;margin-left:6px;border-radius:3px;background:var(--line)}
+.blank::placeholder{color:var(--muted);opacity:.45}
 .dots{display:flex;gap:5px}
 .dots i{width:10px;height:10px;border-radius:50%;background:var(--line)}
 .dots i.ok{background:var(--ok)} .dots i.no{background:var(--bad)} .dots i.cur{outline:2px solid var(--accent);outline-offset:1px}
@@ -385,7 +389,6 @@ h3.sub{font-family:var(--f-display);font-size:1.1rem;margin:28px 0 10px}
         <button class="play" id="cPlay" aria-label="播放整句"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 9v6h4l5 4V5L8 9H4zm12.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg></button>
         <button class="play slow" id="cSlow" aria-label="慢速播放" title="慢速"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 6a8 8 0 0 0-8 8h2a6 6 0 0 1 12 0h2a8 8 0 0 0-8-8zm-1 4v5.3l4 2.4.8-1.3-3.3-2V10H11z"/></svg></button>
         <div class="zhhint" id="cHint" style="flex:1;min-width:0"></div>
-        <label class="chip"><input type="checkbox" id="cShowZh" checked> 中文提示</label>
       </div>
       <div class="sentence" id="cSentence"></div>
       <div class="feedback" id="cFeedback" aria-live="polite"></div>
@@ -395,7 +398,7 @@ h3.sub{font-family:var(--f-display);font-size:1.1rem;margin:28px 0 10px}
         <div class="keys"><span><kbd>Enter</kbd> 检查 / 下一题</span><span><kbd>Esc</kbd> 重听</span></div>
       </div>
     </div>
-    <p class="note">先听整句，把空里的词打出来。答错的会进「错题本」。</p>
+    <p class="note">先听整句，把空里的词打出来。答错了可以一直重试，想不出来就点「看答案」再照着打一遍。第一次就答对才算分，答错过的会进「错题本」。</p>
   </section>
 
   <!-- DIALOGUE -->
@@ -1119,8 +1122,6 @@ function rainOver(){
 const STOP=new Set("the a an to of in on at for and but or is are was were be it i you he she we they my your his her our their this that these those with have has had do does did can could would should will there here what when where how about from by me him them us not no yes so just very let let's".split(" "));
 const cz={q:[],i:0,ok:0,res:[],state:"ask",cur:null};
 seg("clozeSrcSeg","clozeSrc",clozeStart);
-$("cShowZh").checked=settings.clozeZh;
-$("cShowZh").onchange=e=>{settings.clozeZh=e.target.checked;saveSettings();clozeHint()};
 function makeCloze(item){
   const text=item.type==="phrase"?item.en:item.ex;if(!text)return null;
   const parts=text.split(/(\s+)/),cands=[];
@@ -1152,17 +1153,21 @@ function clozeStart(){
   }
   clozeShow();
 }
-function clozeHint(){
+function clozeHint(open){
   const c=cz.cur;if(!c)return;
-  $("cHint").innerHTML=settings.clozeZh?(c.item.type==="word"?`空里的词：<b>${esc(c.item.zh)}</b>`:`整句意思：<b>${esc(c.item.zh)}</b>`):"只靠听";
+  const label=c.item.type==="word"?"空里的词":"整句意思";
+  if(open){$("cHint").innerHTML=`${label}：<b>${esc(c.item.zh)}</b>`;return}
+  $("cHint").innerHTML=`<button class="peek" id="cPeek" aria-label="点击查看中文意思">${label}<span class="mask"></span> 点击查看</button>`;
+  $("cPeek").onclick=()=>{clozeHint(true);try{$("cIn").focus({preventScroll:true})}catch(e){}};
 }
 function clozeShow(){
-  const c=cz.cur=cz.q[cz.i];cz.state="ask";
+  const c=cz.cur=cz.q[cz.i];cz.state="ask";cz.tries=0;
   $("cIdx").textContent=cz.i+1;$("cOk").textContent=cz.ok;
   $("cDots").innerHTML=cz.q.map((_,k)=>`<i class="${cz.res[k]===true?"ok":cz.res[k]===false?"no":""} ${k===cz.i?"cur":""}"></i>`).join("");
   $("cSentence").innerHTML=c.parts.map((p,k)=>k===c.pick.i?`${esc(c.pick.pre)}<input class="blank" id="cIn" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="填空" style="width:${c.pick.core.length+2}ch">${esc(c.pick.post)}`:esc(p)).join("");
   clozeHint();
   $("cFeedback").textContent="";$("cFeedback").className="feedback";$("cCheck").textContent="检查";
+  $("cIn").addEventListener("input",e=>e.target.classList.remove("no","badx"));
   $("cIn").addEventListener("keydown",e=>{
     if(e.key==="Enter"){e.preventDefault();clozeCheck()}
     if(e.key==="Escape"){e.preventDefault();speak(c.text)}
@@ -1176,21 +1181,36 @@ function clozeCheck(reveal){
     else clozeEnd();
     return;
   }
-  const inp=$("cIn"),v=loose(inp.value),ans=loose(c.pick.core);
-  if(!reveal&&!v){inp.focus();return}
-  cz.state="done";$("cCheck").textContent=cz.i<cz.q.length-1?"下一题":"看结果";
-  if(!reveal&&v===ans){
-    cz.ok++;cz.res[cz.i]=true;inp.classList.add("ok");
-    $("cFeedback").textContent="答对了！";$("cFeedback").className="feedback ok";
-    counters.clozeOk++;fixWrong(c.item.id);addPoint();speak(c.text);
-  }else{
-    cz.res[cz.i]=false;inp.classList.add("no");inp.value=c.pick.core;
-    $("cFeedback").textContent=(reveal?"答案是 ":"答案是 ")+c.pick.core+"，已加入错题本。";$("cFeedback").className="feedback no";
-    addWrong(c.item.id);speak(c.text,true);
+  const inp=$("cIn"),v=loose(inp.value),ans=loose(c.pick.core),fb=$("cFeedback");
+  const paintDots=()=>{$("cDots").innerHTML=cz.q.map((_,k)=>`<i class="${cz.res[k]===true?"ok":cz.res[k]===false?"no":""} ${k===cz.i?"cur":""}"></i>`).join("")};
+  const markWrong=()=>{if(cz.res[cz.i]===undefined){cz.res[cz.i]=false;addWrong(c.item.id);paintDots()}};
+  if(reveal){
+    // show the answer faintly; the user still has to type it to move on
+    markWrong();cz.state="retype";
+    inp.value="";inp.placeholder=c.pick.core;inp.classList.remove("no");
+    fb.textContent="答案是 "+c.pick.core+"，照着打一遍就能进入下一题。";fb.className="feedback no";
+    speak(c.text,true);inp.focus();return;
   }
-  inp.readOnly=true;$("cOk").textContent=cz.ok;
-  $("cDots").innerHTML=cz.q.map((_,k)=>`<i class="${cz.res[k]===true?"ok":cz.res[k]===false?"no":""} ${k===cz.i?"cur":""}"></i>`).join("");
-  $("cCheck").focus();
+  if(!v){inp.focus();return}
+  if(v===ans){
+    cz.state="done";inp.readOnly=true;inp.classList.remove("no");inp.classList.add("ok");inp.value=c.pick.core;
+    if(cz.res[cz.i]===undefined){
+      cz.ok++;cz.res[cz.i]=true;
+      fb.textContent="答对了！";counters.clozeOk++;fixWrong(c.item.id);addPoint();
+    }else fb.textContent="这次对了，记住它。";
+    fb.className="feedback ok";speak(c.text);
+    $("cOk").textContent=cz.ok;paintDots();
+    $("cCheck").textContent=cz.i<cz.q.length-1?"下一题":"看结果";$("cCheck").focus();
+    return;
+  }
+  // wrong: let them try again
+  cz.tries++;markWrong();
+  inp.classList.remove("no");void inp.offsetWidth;inp.classList.add("no","badx");
+  fb.className="feedback no";
+  if(cz.state==="retype")fb.textContent="还不对，照着淡色的答案再打一遍。";
+  else if(cz.tries===1){fb.textContent="不对，再听一遍试试。也可以点「看答案」。";speak(c.text,true)}
+  else fb.textContent="还是不对，再试一次，或者点「看答案」。";
+  inp.select();
 }
 function clozeEnd(){
   cz.cur=null;
@@ -1199,7 +1219,7 @@ function clozeEnd(){
   $("cAgain").onclick=clozeStart;$("cCheck").textContent="再来一轮";cz.state="end";
 }
 $("cCheck").onclick=()=>{if(cz.state==="end")clozeStart();else clozeCheck()};
-$("cReveal").onclick=()=>{if(cz.state==="ask")clozeCheck(true)};
+$("cReveal").onclick=()=>{if(cz.state==="ask"||cz.state==="retype")clozeCheck(true)};
 $("cPlay").onclick=()=>cz.cur&&speak(cz.cur.text);
 $("cSlow").onclick=()=>cz.cur&&speak(cz.cur.text,true);
 
