@@ -194,7 +194,11 @@ kbd{font-family:var(--f-mono);font-size:.78rem;border:1px solid var(--line);bord
 .dots i.ok{background:var(--ok)} .dots i.no{background:var(--bad)} .dots i.cur{outline:2px solid var(--accent);outline-offset:1px}
 
 /* dialogue */
-.scenes{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.scenes{display:grid;gap:22px}
+.scenes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.schead{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;margin-bottom:10px}
+.schead b{font-family:var(--f-display);font-size:1.15rem}
+.schead span{color:var(--muted);font-size:.88rem}
 .scene{text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:16px;display:grid;gap:4px}
 .scene:hover{border-color:var(--accent)}
 .scene b{font-size:1.1rem}
@@ -517,7 +521,7 @@ h3.sub{font-family:var(--f-display);font-size:1.1rem;margin:28px 0 10px}
   <section id="tab-talk" hidden>
     <div id="sceneList">
       <h2>情景对话</h2>
-      <p class="lede">在英国生活常遇到的场景。对方先说，你来接话。点气泡里的「译」可以看中文。</p>
+      <p class="lede">在英国生活常遇到的 16 个场景。对方先说，你来接话；选错了会告诉你错在哪。点气泡里的「译」可以看中文。</p>
       <div class="toolbar">
         <div class="seg" id="talkModeSeg">
           <button class="chip" data-v="pick">选择回答</button>
@@ -2136,92 +2140,380 @@ const TR=[
 ];
 // opts: [english, isRight, note, chinese(for the right one)]
 const SCENES=[
- {id:"cafe",title:"咖啡店点单",en:"At the café",turns:[
-  {npc:"Hi there, what can I get you?",zh:"你好，想喝点什么？",opts:[
-   ["Can I get a medium latte, please?",1,"礼貌又自然，点单常用 Can I get ..., please?","我要一杯中杯拿铁，谢谢。"],
-   ["Give me coffee.",0,"太生硬了，听起来像在命令。"],
-   ["I'm fine, thank you.",0,"这是回答 How are you 的，答非所问。"]]},
-  {npc:"Sure. Is that to have in or take away?",zh:"好的。在这儿喝还是带走？",opts:[
-   ["Take away, please.",1,"二选一的问题，直接说选哪个。","带走，谢谢。"],
-   ["Yes, please.",0,"这是二选一的问题，不能用 yes 回答。"],
-   ["I take it away you.",0,"语序混乱，意思不通。"]]},
-  {npc:"Anything else for you?",zh:"还要别的吗？",opts:[
-   ["No, that's all, thanks.",1,"表示点完了的固定说法。","不用了，就这些，谢谢。"],
-   ["No more.",0,"太生硬。"],
-   ["That's everything I have.",0,"意思变成「这是我所有的东西」。"]]},
-  {npc:"That's three pounds twenty. Are you paying by card?",zh:"一共 3 镑 20。刷卡吗？",opts:[
-   ["Yes, contactless, please.",1,"英国很常见的感应支付说法。","对，用感应支付。"],
-   ["How much?",0,"对方刚说过价格了。"],
-   ["I'm paying a card.",0,"付款方式要说 pay by card。"]]}
- ],end:["Lovely. Your latte will be ready at the end of the counter.","好的，拿铁在柜台那头取。"]},
- {id:"restaurant",title:"餐厅吃饭",en:"At a restaurant",turns:[
-  {npc:"Good evening. Have you booked a table?",zh:"晚上好，请问您订座了吗？",opts:[
-   ["Yes, it's under Lee, for two.",1,"说清用谁的名字订、几个人，最清楚。","订了，名字是 Lee，两位。"],
-   ["Yes, I booked me.",0,"语法不对，也没说名字。"],
-   ["Table is good.",0,"没回答问题，意思也不清楚。"]]},
-  {npc:"Lovely, follow me. Are you ready to order?",zh:"好的，请跟我来。可以点菜了吗？",opts:[
-   ["Could we have a few more minutes, please?",1,"还没想好时这样说很礼貌。","能再给我们几分钟吗？"],
-   ["Wait.",0,"太直接，像在命令服务员。"],
-   ["We are not ready to order you.",0,"order 后面不接人，order you 变成了「点你」。"]]},
-  {npc:"How is everything?",zh:"吃得怎么样？",opts:[
-   ["It's lovely, thank you.",1,"服务员来问时最常见的回答。","很好吃，谢谢。"],
-   ["Everything is how.",0,"把问句的词照搬了，不成句子。"],
-   ["Yes, please.",0,"How 问的是怎么样，不能用 yes 回答。"]]},
-  {npc:"Can I get you anything for dessert?",zh:"要来点甜品吗？",opts:[
-   ["No, thanks. Could we have the bill, please?",1,"拒绝后顺便买单，英国常说 the bill。","不用了，谢谢。可以买单吗？"],
-   ["Give me bill.",0,"太生硬，还少了 the。"],
-   ["I am full of dessert.",0,"意思变成「我肚子里全是甜品」。想说吃饱了用 I'm full。"]]}
- ],end:["Of course, I'll bring it right over.","好的，马上拿过来。"]},
- {id:"directions",title:"问路",en:"Asking for directions",turns:[
-  {npc:"Hi, you look a bit lost. Can I help?",zh:"你好，你好像迷路了，需要帮忙吗？",opts:[
-   ["Yes, please. How do I get to the train station?",1,"先接受帮助，再说要去哪里。","是的，麻烦了。去火车站怎么走？"],
-   ["I am lost person.",0,"语法不对，也没说要去哪里。"],
-   ["No help.",0,"不礼貌，而且你确实需要帮忙。"]]},
-  {npc:"Go straight on, then take the second left. It's about five minutes' walk.",zh:"一直往前走，第二个路口左转。走路大概五分钟。",opts:[
-   ["So, straight on and then the second left?",1,"复述一遍确认，是很好用的听力技巧。","就是一直走，然后第二个路口左转？"],
-   ["Where is straight?",0,"straight on 是「一直往前」，不是一个地方。"],
-   ["Five minutes is my walk.",0,"意思不通。"]]},
-  {npc:"That's right. You can't miss it.",zh:"对，很好找的。",opts:[
-   ["Brilliant, thanks so much for your help.",1,"英式口语常用 Brilliant 表示「太好了」。","太好了，非常感谢你的帮助。"],
-   ["I can miss it.",0,"You can't miss it 意思是「很好找」，不用反驳。"],
-   ["You're welcome.",0,"这是回应别人道谢的，这里应该是你说谢谢。"]]}
- ],end:["No problem. Have a good day!","不客气，祝你今天愉快！"]},
- {id:"doctor",title:"打电话约医生",en:"Booking a GP appointment",turns:[
-  {npc:"Good morning, Riverside Surgery. How can I help?",zh:"早上好，这里是 Riverside 诊所，有什么可以帮您？",opts:[
-   ["Hi, I'd like to book an appointment, please.",1,"直接说来意，book an appointment 就是预约。","你好，我想预约看医生。"],
-   ["I want doctor now.",0,"太急、太生硬，也少了冠词。"],
-   ["Good morning, how are you?",0,"打电话办事要直接说来意。"]]},
-  {npc:"Of course. What seems to be the problem?",zh:"好的，请问哪里不舒服？",opts:[
-   ["I've had a sore throat and a fever for three days.",1,"说清症状和持续时间，是医生最需要的信息。","我喉咙痛、发烧三天了。"],
-   ["I have problem.",0,"太笼统，还缺了冠词 a。"],
-   ["The problem is the doctor.",0,"会被误解成在抱怨医生。"]]},
-  {npc:"We have a slot at half ten tomorrow morning. Does that work for you?",zh:"明天上午十点半有空位，可以吗？",opts:[
-   ["Yes, that works for me.",1,"直接用对方的说法回答，很自然。","可以，这个时间我方便。"],
-   ["Tomorrow is tomorrow.",0,"答非所问。"],
-   ["Yes, it is working.",0,"这里 work 是「行得通」的意思，不能说 it is working。"]]},
-  {npc:"Lovely. Can I take your date of birth, please?",zh:"好的，请问您的出生日期是？",opts:[
-   ["Yes, it's the fifth of March, 1998.",1,"英国常用「几号 of 几月」的说法。","好的，是 1998 年 3 月 5 日。"],
-   ["You can take it.",0,"Can I take... 是「我能记一下吗」，不是真的拿走。"],
-   ["I was born in a hospital.",0,"问的是日期，不是地点。"]]}
- ],end:["Thank you. You're booked in for half ten tomorrow.","谢谢，已经帮您约好明天十点半。"]},
- {id:"return",title:"商店退货",en:"Returning something",turns:[
-  {npc:"Hi, how can I help you?",zh:"你好，有什么可以帮你？",opts:[
-   ["Hi, I'd like to return this jumper, please.",1,"return 就是退货，jumper 是英式说法的毛衣。","你好，我想退这件毛衣。"],
-   ["I give back this.",0,"语序不对，退货要用 return。"],
-   ["Help me, please!",0,"听起来像遇到了紧急情况。"]]},
-  {npc:"Sure. Is there anything wrong with it?",zh:"好的，衣服有什么问题吗？",opts:[
-   ["It's a bit too small for me.",1,"说明原因，简单清楚。","我穿有点小。"],
-   ["It is wrong.",0,"没说具体哪里有问题。"],
-   ["Nothing, I am wrong.",0,"意思变成「我错了」，很奇怪。"]]},
-  {npc:"Have you got the receipt?",zh:"你有收据吗？",opts:[
-   ["Yes, here you go.",1,"递东西给别人时的常用语。","有，给你。"],
-   ["Yes, I am receipt.",0,"意思成了「我是收据」。"],
-   ["Receipt is not here, it is home.",0,"语法不对。没带可以说 I left it at home。"]]},
-  {npc:"Would you like a refund or an exchange?",zh:"你想退款还是换货？",opts:[
-   ["A refund, please.",1,"二选一的问题，直接说选哪个。","退款，谢谢。"],
-   ["Yes, please.",0,"这是二选一的问题，不能用 yes 回答。"],
-   ["I would like both.",0,"退款和换货只能选一个。"]]}
- ],end:["No problem. The money will be back on your card in a few days.","好的，钱几天内会退回你的卡上。"]}
+// ================= small talk =================
+{id:"neighbour",cat:"chat",title:"和邻居聊天气",en:"Chatting with a neighbour",turns:[
+ {npc:"Morning! Lovely day, isn't it?",zh:"早上好！今天天气真好，是吧？",opts:[
+  ["Morning! It's gorgeous. Makes a change from all that rain.",1,"makes a change 意思是「难得换换样」，很地道的天气闲聊。","早！天气太好了，跟之前下个不停的雨比真是难得。"],
+  ["Yes, it is lovely day.",0,"缺了冠词 a，而且只是重复对方的话，有点干巴巴。"],
+  ["I don't know, I didn't check.",0,"天气闲聊只是打招呼，不需要查天气。"]]},
+ {npc:"Have you got anything nice planned for the weekend?",zh:"周末有什么好安排吗？",opts:[
+  ["Not much, I might go for a walk along the river. How about you?",1,"回答之后反问一句，对话就能接下去。","没什么，可能沿河散散步。你呢？"],
+  ["No.",0,"太短了，对话一下就断了。"],
+  ["My plan is secret.",0,"听起来很怪，像在拒绝聊天。"]]},
+ {npc:"We're having the grandkids over, so it'll be a busy one!",zh:"孙子孙女要来，会挺忙的！",opts:[
+  ["Oh, that'll be nice! How old are they now?",1,"先表示替对方高兴，再顺着话题问。","哦，那挺好的！他们现在多大了？"],
+  ["Busy is not good.",0,"听起来很扫兴。"],
+  ["Why grandkids?",0,"像在质问，不礼貌。"]]},
+ {npc:"Six and nine. They grow up so fast!",zh:"六岁和九岁。长得可真快！",opts:[
+  ["They really do. Anyway, I'd better let you get on.",1,"I'd better let you get on 是礼貌结束对话的常用说法。","是啊。好了，不耽误你了。"],
+  ["Yes, they are big.",0,"有点生硬，像在描述体型。"],
+  ["Six and nine is fifteen.",0,"答非所问。"]]},
+ {npc:"Okay, see you later! Enjoy the sunshine.",zh:"好，回见！享受阳光吧。",opts:[
+  ["You too, see you!",1,"回应别人的祝福用 you too。","你也是，回见！"],
+  ["Me too!",0,"回应祝福要说 you too，不是 me too。"],
+  ["Sunshine is hot.",0,"答非所问。"]]}
+],end:["Bye now!","拜拜！"]},
+{id:"monday",cat:"chat",title:"周一早上和同事寒暄",en:"Monday morning at work",turns:[
+ {npc:"Morning! Good weekend?",zh:"早！周末过得好吗？",opts:[
+  ["Yeah, not bad, thanks. Pretty quiet. How was yours?",1,"简单回答再反问，是同事之间寒暄的标准做法。","还不错，谢谢。挺安静的。你呢？"],
+  ["Yes.",0,"太短，对方没法接话。"],
+  ["My weekend was Saturday and Sunday.",0,"答非所问。"]]},
+ {npc:"Oh, it was great. We went to a gig in town on Saturday.",zh:"很棒。周六我们去城里看了场演出。",opts:[
+  ["Oh nice! Who did you see?",1,"表示感兴趣，再追问细节。","不错啊！看的谁？"],
+  ["Gig is what?",0,"语序不对。不懂可以问 What's a gig?"],
+  ["I don't like music.",0,"太扫兴了。"]]},
+ {npc:"A local band, you won't have heard of them. They were brilliant though.",zh:"一个本地乐队，你肯定没听过。不过他们很棒。",opts:[
+  ["Sounds like a good night. I'll have to check them out.",1,"check out 在这里是「去听听、去看看」。","听起来那晚很不错。我得去听听。"],
+  ["I have heard of them.",0,"你都不知道是哪个乐队，这样说不合逻辑。"],
+  ["Brilliant though what?",0,"不成句。though 放句末表示「不过」。"]]},
+ {npc:"Anyway, have you seen the email about the meeting?",zh:"对了，你看到关于开会的那封邮件了吗？",opts:[
+  ["Not yet, I've only just got in. What's it about?",1,"just got in 意思是「刚到」。","还没，我刚到。说的什么？"],
+  ["No, I don't see.",0,"时态不对，应该说 I haven't seen it。"],
+  ["Meeting is boring.",0,"在同事面前这样说不太专业。"]]},
+ {npc:"It's been moved to two o'clock.",zh:"改到两点了。",opts:[
+  ["Ah, good to know. Thanks for the heads-up.",1,"heads-up 是「提前告知」。","啊，好的。谢谢提醒。"],
+  ["Two o'clock is moved.",0,"意思反了。"],
+  ["Why you move it?",0,"语法不对，而且不是对方改的时间。"]]}
+],end:["No worries. Right, I'd better get a coffee before it all kicks off.","没事。好了，事情开始之前我得去弄杯咖啡。"]},
+{id:"pub",cat:"chat",title:"酒吧里和陌生人聊天",en:"Chatting at the pub",turns:[
+ {npc:"Mind if I sit here?",zh:"介意我坐这儿吗？",opts:[
+  ["No, not at all. Go ahead.",1,"Mind if...? 问的是「介不介意」，同意要回答 No（不介意）。","不介意，请坐。"],
+  ["Yes, please sit.",0,"Yes 在这里表示「我介意」，意思就反了。"],
+  ["Sit is OK.",0,"不自然。"]]},
+ {npc:"Cheers. Are you watching the match?",zh:"谢谢。你在看比赛吗？",opts:[
+  ["Sort of. I'm not a huge football fan, to be honest.",1,"sort of 意思是「算是吧」。","算是吧。说实话我不是很铁的球迷。"],
+  ["Yes, I am watch.",0,"语法不对，应该是 I'm watching it。"],
+  ["What match? Fire?",0,"match 在这里是比赛，不是火柴。"]]},
+ {npc:"Fair enough. Where are you from, if you don't mind me asking?",zh:"理解。不介意的话，你是哪里人？",opts:[
+  ["I'm from China, but I've been living here for about a year.",1,"用现在完成进行时，表示从一年前一直住到现在。","我是中国人，在这边住了大概一年了。"],
+  ["I come from China since one year.",0,"时态和介词都不对。"],
+  ["Why you ask?",0,"有点防备，语法也不对。"]]},
+ {npc:"Oh nice. How are you finding it?",zh:"不错啊。你觉得这边怎么样？",opts:[
+  ["I really like it, apart from the weather!",1,"拿天气开个玩笑，是和英国人拉近距离的好办法。","我很喜欢，除了天气！"],
+  ["I find it on the map.",0,"How are you finding it? 问的是感受，不是找东西。"],
+  ["It is finding good.",0,"不成句。"]]},
+ {npc:"Ha, tell me about it! Can I get you a drink?",zh:"哈，可不是嘛！要我请你喝一杯吗？",opts:[
+  ["That's kind of you, but I'm all right for now, thanks.",1,"婉拒别人请客的礼貌说法。","你真好，不过我现在还有，谢谢。"],
+  ["Yes, give me.",0,"太直接，不礼貌。"],
+  ["No, I don't drink with strangers.",0,"太不友好了。"]]}
+],end:["No worries. Enjoy the rest of your night!","好吧。今晚玩得开心！"]},
+{id:"busstop",cat:"chat",title:"等公交时吐槽晚点",en:"Waiting at the bus stop",turns:[
+ {npc:"Has the number 12 been yet?",zh:"12 路车来过了吗？",opts:[
+  ["Not yet. I've been waiting about ten minutes.",1,"顺便说你等了多久，很自然。","还没。我已经等了大概十分钟了。"],
+  ["Number 12 is been.",0,"语法不对。"],
+  ["I don't know number.",0,"不自然。"]]},
+ {npc:"Typical. It's always late when it's raining.",zh:"典型。一下雨它就晚点。",opts:[
+  ["Tell me about it. I'm going to be late for work.",1,"Tell me about it 表示「可不是嘛」，深有同感。","可不是嘛。我上班要迟到了。"],
+  ["OK, I tell you about it.",0,"理解错了，Tell me about it 不是让你讲给他听。"],
+  ["Rain makes bus slow because the road is wet.",0,"闲聊吐槽不需要认真解释原因。"]]},
+ {npc:"Oh, look, here it comes. Finally!",zh:"哦，看，来了。终于！",opts:[
+  ["About time! After you.",1,"About time 是「总算来了」，After you 是「您先请」。","总算来了！您先请。"],
+  ["It comes here.",0,"很平淡，不像在回应。"],
+  ["You go first, I am polite.",0,"自己说自己礼貌很奇怪。"]]},
+ {npc:"Thanks, love. Have a good day!",zh:"谢谢你，亲爱的。祝你今天愉快！",opts:[
+  ["You too!",1,"回应祝福。love 是英国不少地区对陌生人的友好称呼，不用在意。","你也是！"],
+  ["I'm not your love.",0,"love 只是友好的称呼，没有别的意思。"],
+  ["Good day is today.",0,"不成意思。"]]}
+],end:["Mind the doors, please!","请注意车门！"]},
+{id:"party",cat:"chat",title:"聚会上认识新朋友",en:"Meeting people at a party",turns:[
+ {npc:"Hi, I don't think we've met. I'm Tom.",zh:"你好，我们好像没见过。我是 Tom。",opts:[
+  ["Hi Tom, I'm Lin. Nice to meet you.",1,"自我介绍的标准说法。","你好 Tom，我是 Lin。很高兴认识你。"],
+  ["Yes, we didn't meet.",0,"时态和意思都不对。"],
+  ["I know.",0,"听起来很冷淡。"]]},
+ {npc:"So how do you know Emma?",zh:"那你是怎么认识 Emma 的？",opts:[
+  ["We work together, actually. How about you?",1,"回答之后反问。","其实我们是同事。你呢？"],
+  ["I know her by face.",0,"不自然，也没说清关系。"],
+  ["Emma is my know.",0,"不成句。"]]},
+ {npc:"We were at uni together. So what do you do?",zh:"我们是大学同学。那你是做什么的？",opts:[
+  ["I'm a data analyst. It's more interesting than it sounds, I promise!",1,"自嘲一下，很有英式幽默。","我是数据分析师。保证比听起来有意思！"],
+  ["I do many things.",0,"太含糊。"],
+  ["I am working on data now.",0,"像在说你此刻正在工作。"]]},
+ {npc:"Ha! And are you enjoying living in Manchester?",zh:"哈！那你喜欢住在曼彻斯特吗？",opts:[
+  ["Yeah, I love it. The people are really friendly.",1,"给个具体理由，比只说 yes 好聊。","喜欢，这里的人很友好。"],
+  ["Yes, I am enjoy.",0,"语法不对，应该是 I'm enjoying it。"],
+  ["Manchester is a city.",0,"答非所问。"]]},
+ {npc:"Glad to hear it. Can I get you another drink?",zh:"很高兴听你这么说。再给你拿杯喝的吗？",opts:[
+  ["I'm fine for now, thanks. I'll come with you to the kitchen, though.",1,"婉拒之后提出一起去，对话自然延续。","我暂时不用，谢谢。不过我跟你一起去厨房吧。"],
+  ["Another? I didn't finish.",0,"语气有点冲。"],
+  ["Yes, all drinks.",0,"很奇怪。"]]}
+],end:["Great, come on then. Have you tried Emma's lasagne yet?","好啊，走吧。你尝过 Emma 做的千层面了吗？"]},
+{id:"barber",cat:"chat",title:"理发时和理发师闲聊",en:"At the hairdresser's",turns:[
+ {npc:"Hiya, what are we doing for you today?",zh:"嗨，今天想怎么剪？",opts:[
+  ["Just a trim, please. About two centimetres off.",1,"trim 是修剪，再说清剪掉多少。","修一下就行，剪掉大概两厘米。"],
+  ["Cut my hair.",0,"太笼统了。"],
+  ["Make me beautiful.",0,"不具体，有点尴尬。"]]},
+ {npc:"No problem. Have you got anything nice planned for the rest of the day?",zh:"好的。今天接下来有什么安排吗？",opts:[
+  ["I'm meeting some friends for dinner later.",1,"简单说一下安排就好。","晚点要和朋友吃饭。"],
+  ["No, I'm only here.",0,"意思很奇怪。"],
+  ["Why do you want to know?",0,"太警惕了，这只是理发师的寒暄。"]]},
+ {npc:"Oh lovely. Anywhere nice?",zh:"不错啊。去哪儿吃？",opts:[
+  ["A little Italian place near the station. Have you been?",1,"回答后反问，就不会冷场。","车站旁边一家小意大利餐厅。你去过吗？"],
+  ["Nice place yes.",0,"不自然。"],
+  ["It's secret.",0,"很奇怪。"]]},
+ {npc:"How's that? Do you want it any shorter?",zh:"这样可以吗？还要再短一点吗？",opts:[
+  ["No, that's perfect, thanks.",1,"满意就直接说。","不用了，这样正好，谢谢。"],
+  ["It's OK I think maybe.",0,"太犹豫，理发师不知道你到底满不满意。"],
+  ["Shorter is no.",0,"不成句。"]]},
+ {npc:"Lovely. That's eighteen pounds, please.",zh:"好的，一共 18 镑。",opts:[
+  ["Here you go. Keep the change.",1,"Keep the change 是「不用找了」，相当于给小费。","给你。不用找了。"],
+  ["Eighteen? Too much!",0,"当面嫌贵很尴尬。"],
+  ["Change me money.",0,"意思不清楚。"]]}
+],end:["Thanks very much! See you next time.","非常感谢！下次见。"]},
+{id:"park",cat:"chat",title:"公园里遇到遛狗的人",en:"A dog walker in the park",turns:[
+ {npc:"Sorry, he's very friendly! He just wants to say hello.",zh:"不好意思，它很友好的！它只是想打个招呼。",opts:[
+  ["No problem, he's lovely! What's his name?",1,"夸狗再问名字，是和遛狗的人聊天的万能开头。","没关系，它好可爱！它叫什么名字？"],
+  ["Your dog is attacking me.",0,"太夸张，对方已经道歉了。"],
+  ["Hello dog.",0,"有点怪。想跟狗打招呼可以说 Hello, you!"]]},
+ {npc:"This is Biscuit. He's a cockapoo.",zh:"它叫 Biscuit，是可卡贵宾犬。",opts:[
+  ["Aw, he's gorgeous. How old is he?",1,"gorgeous 也常用来夸宠物可爱。","啊，它太可爱了。几岁了？"],
+  ["Biscuit is food.",0,"有点扫兴。"],
+  ["I'm scared of the dogs.",0,"泛指要说 dogs，不加 the；而且对方会尴尬。"]]},
+ {npc:"Two in March. He's still got loads of energy.",zh:"三月就两岁了。还是精力旺盛。",opts:[
+  ["I bet he keeps you busy!",1,"I bet... 意思是「我猜一定……」。","它肯定让你忙坏了吧！"],
+  ["Energy is good for him?",0,"不太自然。"],
+  ["March is a month.",0,"答非所问。"]]},
+ {npc:"He certainly does. Do you live round here?",zh:"可不是嘛。你住这附近吗？",opts:[
+  ["Yes, just on the other side of the park.",1,"简单说位置就好。","是的，就在公园另一边。"],
+  ["Yes, I live round.",0,"少了 here。"],
+  ["Round where?",0,"有点生硬。"]]},
+ {npc:"Oh, we'll probably see you again then. Come on, Biscuit!",zh:"那我们以后可能还会碰到。走吧，Biscuit！",opts:[
+  ["Hope so! Bye, Biscuit!",1,"轻松地道别。","希望如此！拜拜，Biscuit！"],
+  ["See you never.",0,"很不礼貌。"],
+  ["Come on, me too.",0,"不成意思。"]]}
+],end:["Bye!","拜拜！"]},
+// ================= errands =================
+{id:"cafe",cat:"errand",title:"咖啡店点单",en:"At the café",turns:[
+ {npc:"Hi there, what can I get you?",zh:"你好，想喝点什么？",opts:[
+  ["Can I get a medium latte, please?",1,"礼貌又自然，点单常用 Can I get ..., please?","我要一杯中杯拿铁，谢谢。"],
+  ["Give me coffee.",0,"太生硬了，听起来像在命令。"],
+  ["I'm fine, thank you.",0,"这是回答 How are you 的，答非所问。"]]},
+ {npc:"Sure. Any particular milk? We've got oat, soya or regular.",zh:"好的，要什么奶？有燕麦奶、豆奶和普通牛奶。",opts:[
+  ["Oat milk, please.",1,"直接说选哪种。","燕麦奶，谢谢。"],
+  ["Yes, milk.",0,"没说选哪一种。"],
+  ["I don't drink.",0,"drink 单独用常指喝酒，而且答非所问。"]]},
+ {npc:"Is that to have in or take away?",zh:"在这儿喝还是带走？",opts:[
+  ["Take away, please.",1,"二选一的问题，直接说选哪个。","带走，谢谢。"],
+  ["Yes, please.",0,"这是二选一的问题，不能用 yes 回答。"],
+  ["I take it away you.",0,"语序混乱。"]]},
+ {npc:"Can I get you anything to eat with that?",zh:"要配点吃的吗？",opts:[
+  ["Go on then, I'll have one of those croissants.",1,"Go on then 是英式口语「那好吧」，被劝着买时很常用。","那好吧，我来一个可颂。"],
+  ["I eat croissant.",0,"时态和冠词都不对，像在说你的习惯。"],
+  ["Anything is OK.",0,"让店员替你选不太合适。"]]},
+ {npc:"Would you like it warmed up?",zh:"要帮你加热一下吗？",opts:[
+  ["Yes please, that'd be lovely.",1,"that'd be lovely 是很英式的礼貌回答。","好的，谢谢，那太好了。"],
+  ["Yes, warm me.",0,"意思变成「把我加热」。"],
+  ["It is cold?",0,"语序不对，问句应为 Is it cold?"]]},
+ {npc:"That's five pounds forty. Are you paying by card?",zh:"一共 5 镑 40。刷卡吗？",opts:[
+  ["Yes, contactless, please.",1,"英国很常见的感应支付说法。","对，用感应支付。"],
+  ["How much?",0,"对方刚说过价格了。"],
+  ["I'm paying a card.",0,"付款方式要说 pay by card。"]]},
+ {npc:"Do you need a receipt?",zh:"需要小票吗？",opts:[
+  ["No, I'm fine, thanks.",1,"I'm fine 在这里是婉拒，英国人很常用。","不用了，谢谢。"],
+  ["No need you.",0,"中式英语。"],
+  ["I don't know.",0,"答非所问。"]]}
+],end:["Lovely. Your latte will be ready at the end of the counter.","好的，拿铁在柜台那头取。"]},
+{id:"restaurant",cat:"errand",title:"餐厅吃饭",en:"At a restaurant",turns:[
+ {npc:"Good evening. Have you booked a table?",zh:"晚上好，请问您订座了吗？",opts:[
+  ["Yes, it's under Lee, for two.",1,"说清用谁的名字订的、几个人，最清楚。","订了，名字是 Lee，两位。"],
+  ["Yes, I booked me.",0,"语法不对，也没说名字。"],
+  ["Table is good.",0,"没回答问题，意思也不清楚。"]]},
+ {npc:"Lovely. Would you like to sit inside or out on the terrace?",zh:"好的。坐里面还是外面露台？",opts:[
+  ["Inside, please. It's a bit chilly.",1,"说出选择再给个理由，很自然。","里面吧，外面有点冷。"],
+  ["Yes, sit.",0,"不成句，也没回答选哪个。"],
+  ["I like terrace inside.",0,"意思自相矛盾。"]]},
+ {npc:"Can I get you any drinks to start with?",zh:"先来点喝的吗？",opts:[
+  ["Could we have a bottle of sparkling water, please?",1,"Could we have... 点单很礼貌。","能来一瓶气泡水吗？"],
+  ["Drinks start.",0,"不成句。"],
+  ["We are not thirsty people.",0,"很奇怪。"]]},
+ {npc:"Are you ready to order?",zh:"可以点菜了吗？",opts:[
+  ["Could we have a few more minutes, please?",1,"还没想好时这样说很礼貌。","能再给我们几分钟吗？"],
+  ["Wait.",0,"太直接，像在命令服务员。"],
+  ["We are not ready to order you.",0,"order 后面不接人，order you 变成了「点你」。"]]},
+ {npc:"No problem. And what can I get for you?",zh:"没问题。那您想点什么？",opts:[
+  ["I'll have the fish, please. Does it come with chips?",1,"用 I'll have 点菜，再顺便问配菜。","我要那个鱼。配薯条吗？"],
+  ["I want eat fish.",0,"少了 to，而且太直接。"],
+  ["Fish is me.",0,"中式表达，意思变成「我是鱼」。"]]},
+ {npc:"How is everything?",zh:"吃得怎么样？",opts:[
+  ["It's lovely, thank you.",1,"服务员来问时最常见的回答。","很好吃，谢谢。"],
+  ["Everything is how.",0,"把问句的词照搬了，不成句子。"],
+  ["Yes, please.",0,"How 问的是怎么样，不能用 yes 回答。"]]},
+ {npc:"Can I get you anything for dessert?",zh:"要来点甜品吗？",opts:[
+  ["No, thanks. Could we have the bill, please?",1,"拒绝后顺便买单，英国常说 the bill。","不用了，谢谢。可以买单吗？"],
+  ["Give me bill.",0,"太生硬，还少了 the。"],
+  ["I am full of dessert.",0,"意思变成「我肚子里全是甜品」。想说吃饱了用 I'm full。"]]}
+],end:["Of course, I'll bring it right over.","好的，马上拿过来。"]},
+{id:"directions",cat:"errand",title:"问路",en:"Asking for directions",turns:[
+ {npc:"Hi, you look a bit lost. Can I help?",zh:"你好，你好像迷路了，需要帮忙吗？",opts:[
+  ["Yes, please. How do I get to the train station?",1,"先接受帮助，再说要去哪里。","是的，麻烦了。去火车站怎么走？"],
+  ["I am lost person.",0,"语法不对，也没说要去哪里。"],
+  ["No help.",0,"不礼貌，而且你确实需要帮忙。"]]},
+ {npc:"Go straight on, then take the second left.",zh:"一直往前走，然后第二个路口左转。",opts:[
+  ["So, straight on and then the second left?",1,"复述一遍确认，是很好用的听力技巧。","就是一直走，然后第二个路口左转？"],
+  ["Where is straight?",0,"straight on 是「一直往前」，不是一个地方。"],
+  ["Second left is my left?",0,"表达混乱。"]]},
+ {npc:"That's right. Then you'll see it on your right, just past the bank.",zh:"对。然后过了银行，它就在你右手边。",opts:[
+  ["Past the bank, on the right. Got it.",1,"复述关键信息，Got it 表示明白了。","过了银行，在右边。明白了。"],
+  ["The bank is my right?",0,"理解错了，车站在银行后面。"],
+  ["I go to the bank?",0,"不是让你去银行。"]]},
+ {npc:"Are you walking? It's about five minutes from here.",zh:"你走路吗？离这儿大概五分钟。",opts:[
+  ["Yes, I'm on foot. That's not far at all.",1,"on foot 是步行。","对，我走路。那一点都不远。"],
+  ["Yes, I'm walking man.",0,"中式英语。"],
+  ["Five minutes is long time.",0,"缺了 a，而且五分钟不算久，语气奇怪。"]]},
+ {npc:"You can't miss it.",zh:"很好找的。",opts:[
+  ["Brilliant, thanks so much for your help.",1,"英式口语常用 Brilliant 表示「太好了」。","太好了，非常感谢你的帮助。"],
+  ["I can miss it.",0,"You can't miss it 意思是「很好找」，不用反驳。"],
+  ["You're welcome.",0,"这是回应别人道谢的，这里应该你说谢谢。"]]}
+],end:["No problem. Have a good day!","不客气，祝你今天愉快！"]},
+{id:"doctor",cat:"errand",title:"打电话约医生",en:"Booking a GP appointment",turns:[
+ {npc:"Good morning, Riverside Surgery. How can I help?",zh:"早上好，这里是 Riverside 诊所，有什么可以帮您？",opts:[
+  ["Hi, I'd like to book an appointment, please.",1,"直接说来意，book an appointment 就是预约。","你好，我想预约看医生。"],
+  ["I want doctor now.",0,"太急、太生硬，也少了冠词。"],
+  ["Good morning, how are you?",0,"打电话办事要直接说来意。"]]},
+ {npc:"Of course. What seems to be the problem?",zh:"好的，请问哪里不舒服？",opts:[
+  ["I've had a sore throat and a fever for three days.",1,"说清症状和持续时间，是医生最需要的信息。","我喉咙痛、发烧三天了。"],
+  ["I have problem.",0,"太笼统，还缺了冠词 a。"],
+  ["The problem is the doctor.",0,"会被误解成在抱怨医生。"]]},
+ {npc:"Have you taken anything for it?",zh:"吃过什么药吗？",opts:[
+  ["Just some paracetamol, but it hasn't really helped.",1,"paracetamol 是英国最常用的退烧止痛药。","只吃了点扑热息痛，但没什么用。"],
+  ["I take medicine every day yes.",0,"语法混乱，意思也不对。"],
+  ["Nothing eat.",0,"中式英语。"]]},
+ {npc:"We have a slot at half ten tomorrow morning. Does that work for you?",zh:"明天上午十点半有空位，可以吗？",opts:[
+  ["Yes, that works for me.",1,"直接用对方的说法回答，很自然。","可以，这个时间我方便。"],
+  ["Tomorrow is tomorrow.",0,"答非所问。"],
+  ["Yes, it is working.",0,"这里 work 是「行得通」的意思，不能说 it is working。"]]},
+ {npc:"Lovely. Can I take your date of birth, please?",zh:"好的，请问您的出生日期是？",opts:[
+  ["Yes, it's the fifth of March, 1998.",1,"英国常用「几号 of 几月」的说法。","好的，是 1998 年 3 月 5 日。"],
+  ["You can take it.",0,"Can I take... 是「我能记一下吗」，不是真的拿走。"],
+  ["I was born in a hospital.",0,"问的是日期，不是地点。"]]},
+ {npc:"And is your address still 14 Park Road?",zh:"您的地址还是公园路 14 号吗？",opts:[
+  ["Yes, that's right.",1,"确认信息的标准说法。","对，没错。"],
+  ["Yes, I am address.",0,"意思很奇怪。"],
+  ["Maybe.",0,"自己的地址不该说 maybe。"]]}
+],end:["Thank you. You're booked in for half ten tomorrow.","谢谢，已经帮您约好明天十点半。"]},
+{id:"return",cat:"errand",title:"商店退货",en:"Returning something",turns:[
+ {npc:"Hi, how can I help you?",zh:"你好，有什么可以帮你？",opts:[
+  ["Hi, I'd like to return this jumper, please.",1,"return 就是退货，jumper 是英式说法的毛衣。","你好，我想退这件毛衣。"],
+  ["I give back this.",0,"语序不对，退货要用 return。"],
+  ["Help me, please!",0,"听起来像遇到了紧急情况。"]]},
+ {npc:"Sure. Is there anything wrong with it?",zh:"好的，衣服有什么问题吗？",opts:[
+  ["It's a bit too small for me.",1,"说明原因，简单清楚。","我穿有点小。"],
+  ["It is wrong.",0,"没说具体哪里有问题。"],
+  ["Nothing, I am wrong.",0,"意思变成「我错了」，很奇怪。"]]},
+ {npc:"Have you got the receipt?",zh:"你有收据吗？",opts:[
+  ["Yes, here you go.",1,"递东西给别人时的常用语。","有，给你。"],
+  ["Yes, I am receipt.",0,"意思成了「我是收据」。"],
+  ["Receipt is not here, it is home.",0,"语法不对。没带可以说 I left it at home。"]]},
+ {npc:"Did you pay by card?",zh:"你是刷卡付的吗？",opts:[
+  ["Yes, it was this card here.",1,"说明用的是哪张卡，退款会退回原卡。","是的，就是这张卡。"],
+  ["Yes, I card.",0,"不成句。"],
+  ["Card is good.",0,"答非所问。"]]},
+ {npc:"Would you like a refund or an exchange?",zh:"你想退款还是换货？",opts:[
+  ["A refund, please.",1,"二选一的问题，直接说选哪个。","退款，谢谢。"],
+  ["Yes, please.",0,"这是二选一的问题，不能用 yes 回答。"],
+  ["I would like both.",0,"退款和换货只能选一个。"]]},
+ {npc:"Could you just pop your card in the machine for me?",zh:"麻烦把卡插进机器里。",opts:[
+  ["Sure, there you go.",1,"pop 在英式口语里是「放一下、插一下」。","好的，给你。"],
+  ["No, you take it.",0,"让店员自己插你的卡不合适。"],
+  ["I put my card into you.",0,"意思变成把卡塞给对方本人。"]]}
+],end:["No problem. The money will be back on your card in a few days.","好的，钱几天内会退回你的卡上。"]},
+{id:"bank",cat:"errand",title:"银行开户",en:"Opening a bank account",turns:[
+ {npc:"Hello, how can I help you today?",zh:"你好，今天办什么业务？",opts:[
+  ["Hi, I'd like to open a current account, please.",1,"current account 是英国的日常账户，相当于活期账户。","你好，我想开一个活期账户。"],
+  ["I want money.",0,"听起来像要抢劫。"],
+  ["Open the bank, please.",0,"意思变成让银行开门。"]]},
+ {npc:"Of course. Do you have some photo ID with you?",zh:"当然可以。带了有照片的身份证件吗？",opts:[
+  ["Yes, I've got my passport and my residence permit.",1,"说出你带的证件。","带了，有护照和居留卡。"],
+  ["I have photo of me.",0,"不是要你本人的照片。"],
+  ["ID is China.",0,"答非所问。"]]},
+ {npc:"And do you have proof of address, like a utility bill or a tenancy agreement?",zh:"还有地址证明吗，比如水电账单或租房合同？",opts:[
+  ["I've got my tenancy agreement here.",1,"直接说你带了什么。","我带了租房合同。"],
+  ["My address is proof.",0,"不成意思。"],
+  ["I live in house.",0,"缺冠词，也没回答问题。"]]},
+ {npc:"Lovely. Would you like to set up online banking as well?",zh:"好的。需要一起开通网上银行吗？",opts:[
+  ["Yes, please. Is there an app I can use?",1,"答应之后顺便问有没有 app。","好的。有可以用的 app 吗？"],
+  ["Online is no.",0,"不成句。"],
+  ["Bank in the line?",0,"把 online 听错了。"]]},
+ {npc:"Yes, you'll get a text with the details. Your card should arrive in about a week.",zh:"有的，会有短信发给你。银行卡大概一周内寄到。",opts:[
+  ["Brilliant. Thanks for your help.",1,"道谢收尾。","太好了，谢谢你的帮助。"],
+  ["One week is too long, now please.",0,"不礼貌，而且办不到。"],
+  ["Text me the card.",0,"银行卡不能用短信发。"]]}
+],end:["You're welcome. Is there anything else I can help with?","不客气。还有别的需要帮忙的吗？"]},
+{id:"repair",cat:"errand",title:"打电话给中介报修",en:"Reporting a repair",turns:[
+ {npc:"Hello, Oakwood Lettings, Sarah speaking.",zh:"你好，这里是 Oakwood 租房中介，我是 Sarah。",opts:[
+  ["Hi Sarah, I'm calling about a problem in my flat.",1,"I'm calling about... 一开口就说明来电目的。","你好 Sarah，我打电话是想说我公寓里的一个问题。"],
+  ["Hello, who are you?",0,"对方已经说了名字。"],
+  ["My flat is broken.",0,"太笼统。"]]},
+ {npc:"Oh no, what's happened?",zh:"哎呀，怎么了？",opts:[
+  ["The boiler's stopped working, so there's no hot water.",1,"说清问题和后果。","锅炉坏了，所以没有热水。"],
+  ["Water is not hot temperature.",0,"啰嗦又不自然。"],
+  ["Something happened.",0,"没说清楚。"]]},
+ {npc:"How long has it been like that?",zh:"这种情况多久了？",opts:[
+  ["Since yesterday evening.",1,"since 加时间点，表示从那时起。","从昨天晚上开始。"],
+  ["It is long.",0,"不具体。"],
+  ["For yesterday.",0,"介词不对，时间点要用 since。"]]},
+ {npc:"Right. I'll get an engineer out to you. Are you in tomorrow morning?",zh:"好的。我安排维修工过去。你明天上午在家吗？",opts:[
+  ["Yes, I'm working from home, so any time's fine.",1,"be in 是「在家」。","在，我在家办公，什么时候都行。"],
+  ["Yes, I'm in tomorrow morning bed.",0,"意思很奇怪。"],
+  ["Engineer? I don't need an engineer.",0,"engineer 在这里就是上门维修的师傅。"]]},
+ {npc:"Great. They'll give you a ring about half an hour before they arrive.",zh:"好的。他们到之前大概半小时会给你打电话。",opts:[
+  ["Perfect, thanks for sorting it out so quickly.",1,"道谢收尾。","太好了，谢谢这么快处理。"],
+  ["What ring? I'm not married.",0,"give you a ring 是打电话，不是戒指。"],
+  ["OK, ring the doorbell.",0,"理解错了。"]]}
+],end:["No problem. Sorry about the hassle.","不客气，给你添麻烦了。"]},
+{id:"checkout",cat:"errand",title:"超市自助收银出问题",en:"At the self-checkout",turns:[
+ {npc:"Hi, are you all right there?",zh:"你好，没事吧？（机器刚响了）",opts:[
+  ["It says there's an unexpected item in the bagging area.",1,"自助收银最常见的提示，直接念出来就行。","它说装袋区有意外物品。"],
+  ["The machine is angry.",0,"不准确。"],
+  ["I am all right there.",0,"照搬问句，没说出问题。"]]},
+ {npc:"Ah, it's probably your own bag. I'll sort it out for you.",zh:"啊，可能是你自己的袋子。我来帮你弄。",opts:[
+  ["Thanks, sorry about that.",1,"英国人习惯顺口说一句 sorry。","谢谢，不好意思。"],
+  ["Yes, sort my bag.",0,"不自然。"],
+  ["It's not my fault!",0,"语气太冲。"]]},
+ {npc:"Are you over 25? I need to check ID for the wine.",zh:"你超过 25 岁吗？买酒需要查证件。",opts:[
+  ["Yes, here's my driving licence.",1,"英国超市买酒常查证件，看着不到 25 岁就会问。","是的，这是我的驾照。"],
+  ["I am 25 years old man.",0,"中式英语。"],
+  ["The wine is for my friend.",0,"这样说反而可能被拒绝卖酒。"]]},
+ {npc:"That's fine. Do you have a Clubcard?",zh:"好了。有会员卡吗？",opts:[
+  ["No, I don't, thanks.",1,"简单回答就好。","没有，谢谢。"],
+  ["I have club.",0,"不对。"],
+  ["What is club?",0,"想问可以说 What's a Clubcard?"]]},
+ {npc:"No worries. You're all done, have a good day!",zh:"没关系。弄好了，祝你今天愉快！",opts:[
+  ["Thanks, you too!",1,"回应祝福的标准说法。","谢谢，你也是！"],
+  ["Thanks, me too!",0,"应该说 you too。"],
+  ["Good day is good.",0,"不成意思。"]]}
+],end:["Bye now!","拜拜！"]},
+{id:"train",cat:"errand",title:"火车站买票和晚点",en:"At the train station",turns:[
+ {npc:"Hello, where are you travelling to?",zh:"你好，去哪里？",opts:[
+  ["An off-peak return to Manchester, please.",1,"直接说票种和目的地。","一张去曼彻斯特的非高峰往返票。"],
+  ["I travel Manchester.",0,"缺介词，也没说票种。"],
+  ["Train, please.",0,"太笼统。"]]},
+ {npc:"Coming back today?",zh:"今天回来吗？",opts:[
+  ["No, on Sunday.",1,"简洁回答。","不，周日回。"],
+  ["Yes, I come back before.",0,"时态混乱。"],
+  ["Today is Saturday.",0,"答非所问。"]]},
+ {npc:"Have you got a railcard?",zh:"有火车优惠卡吗？",opts:[
+  ["Yes, a 16-25 Railcard.",1,"英国常见的青年优惠卡，能省三分之一。","有，16-25 岁优惠卡。"],
+  ["Rail card is cheap?",0,"语序不对。"],
+  ["No, I have card for bank.",0,"理解错了。"]]},
+ {npc:"That's thirty-two pounds fifty. The next train's at ten past, from platform three.",zh:"一共 32 镑 50。下一班十点过十分，三号站台。",opts:[
+  ["Platform three at ten past. Thanks!",1,"复述关键信息确认。","三号站台，十点过十分。谢谢！"],
+  ["Ten past what?",0,"语气生硬。没听清可以说 Sorry, ten past what time?"],
+  ["I need platform.",0,"不成意思。"]]},
+ {npc:"Sorry, your train's running about twenty minutes late.",zh:"抱歉，你那班车晚点大约二十分钟。",opts:[
+  ["Oh well. Is there anywhere I can get a coffee?",1,"Oh well 表示无奈接受，再问个实际的问题。","唉，好吧。这里有地方能买咖啡吗？"],
+  ["Why late? Give me money back!",0,"晚点二十分钟一般不退款，语气也太冲。"],
+  ["Late is my train?",0,"语序不对。"]]}
+],end:["There's a café just by the entrance.","入口旁边就有一家咖啡馆。"]}
 ];
 
 /* ================= storage & helpers ================= */
@@ -3057,9 +3349,15 @@ seg("talkModeSeg","talkMode");
 function renderScenes(){
   $("sceneList").hidden=!!talk.scene;$("scenePlay").hidden=!talk.scene;
   if(talk.scene)return;
-  $("scenes").innerHTML=SCENES.map(s=>{
+  const card=s=>{
     const st=counters.perfect[s.id]?"零失误完成":counters.scenes[s.id]?"已完成":s.turns.length+" 个回合";
     return `<button class="scene" data-scene="${s.id}"><b>${esc(s.title)}</b><span class="en">${esc(s.en)}</span><span class="st ${counters.scenes[s.id]?"done":""}">${st}</span></button>`;
+  };
+  const groups=[["chat","闲聊 Small talk","和本地人自然地聊起来、接下去、礼貌地结束"],["errand","生活办事","点单、预约、开户、报修这些必须说清楚的场合"]];
+  $("scenes").innerHTML=groups.map(([c,t,d])=>{
+    const list=SCENES.filter(s=>s.cat===c);
+    const done=list.filter(s=>counters.scenes[s.id]).length;
+    return `<div class="scgroup"><div class="schead"><b>${t}</b><span>${d} · 已完成 ${done}/${list.length}</span></div><div class="scenes-grid">${list.map(card).join("")}</div></div>`;
   }).join("");
 }
 $("scenes").addEventListener("click",e=>{const b=e.target.closest("[data-scene]");if(b)startScene(b.dataset.scene)});
