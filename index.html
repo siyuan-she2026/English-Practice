@@ -361,6 +361,8 @@ h3.sub{font-family:var(--f-display);font-size:1.1rem;margin:28px 0 10px}
 .saved .info b{font-size:.95rem}
 .saved .info span{font-size:.82rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .resumed{align-self:center;font-size:.8rem;color:var(--muted);border-top:1px dashed var(--line);padding-top:6px;width:100%;text-align:center}
+.typedwas{font-weight:400;font-family:var(--f-mono);color:var(--muted);font-size:.9rem;margin-top:4px}
+.typedwas u{color:var(--bad);text-decoration-thickness:2px;text-underline-offset:3px}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-weight:700;font-size:.92rem;z-index:20;max-width:calc(100% - 32px);text-align:center}
 .toast.gold{background:var(--flame);color:#fff}
 
@@ -2561,7 +2563,7 @@ const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",
 const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 const localDay=(d=new Date())=>{const z=n=>String(n).padStart(2,"0");return d.getFullYear()+"-"+z(d.getMonth()+1)+"-"+z(d.getDate())};
 const today=localDay();
-const loose=s=>String(s).normalize("NFKC").replace(/[’‘]/g,"'").toLowerCase().replace(/[^a-z0-9' ]/g," ").replace(/\s+/g," ").trim();
+const loose=s=>String(s).replace(/[’‘‛´`ʼ′＇]/g,"'").normalize("NFKC").toLowerCase().replace(/[^a-z0-9' ]/g," ").replace(/\s+/g," ").trim();
 const SPK='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
 
 let custom=store.get("vb.custom",[]);
@@ -2891,7 +2893,11 @@ $("copyAll").onclick=()=>{
 };
 
 /* ================= spelling ================= */
-const normalize=s=>String(s).normalize("NFKC").replace(/[’‘]/g,"'").replace(/[\u00A0\u3000]/g," ");
+const APOS=/[’‘‛´`ʼ′＇]/g;
+const normalize=s=>String(s).replace(APOS,"'").normalize("NFKC").replace(APOS,"'").replace(/[\u00A0\u3000\u2009\u202F]/g," ");
+// what the learner typed, reduced to letters, digits, apostrophes and single spaces;
+// punctuation counts as a word gap, so "go,it's" and "go , it's" both become "go it's"
+const tidyTyped=s=>normalize(s).replace(/[-‐‑–—&\/]/g,"").replace(/[^A-Za-z0-9' ]+/g," ").replace(/ {2,}/g," ").replace(/^ /,"");
 const isTyped=c=>/[a-z0-9' ]/i.test(c);
 let queue=[],cur=null,target="",mode="type",hintMask=new Set(),missedThis=false;
 function pool(src){
@@ -2962,7 +2968,7 @@ function prev(){
   $("feedback").textContent="回看上一个：可以照着再打一遍，这次不计分。";$("feedback").className="feedback";
   speak(cur.en);focusTyper();
 }
-function typedTarget(){return [...target].filter(isTyped).join("")}
+function typedTarget(){return tidyTyped(target).trim()}
 function renderSlots(){
   if(!cur)return;
   const val=normalize($("typer").value);
@@ -2989,7 +2995,7 @@ $("typer").onblur=()=>$("typebox").classList.remove("focus");
 function typerInput(e){
   if(e&&e.isComposing)return;
   const tt=typedTarget();
-  let v=[...normalize($("typer").value)].filter(isTyped).join("");
+  let v=tidyTyped($("typer").value);
   if(v.length>tt.length)v=v.slice(0,tt.length);
   $("typer").value=v;$("typebox").classList.remove("badx","good");renderSlots();
 }
@@ -3016,7 +3022,8 @@ function record(ok){
 }
 function check(){
   if(!cur||mode==="done"){next();return}
-  const val=normalize($("typer").value).trim(),tt=typedTarget(),fb=$("feedback");
+  const typedRaw=$("typer").value;
+  const val=tidyTyped(typedRaw).trim(),tt=typedTarget().replace(/ {2,}/g," ").trim(),fb=$("feedback");
   if(val===tt){
     $("typebox").classList.add("good");
     if(mode==="type"){record(!missedThis);fb.textContent=missedThis?"拼对了（用了提示）":"完全正确！"}
@@ -3033,7 +3040,9 @@ function check(){
   if(mode==="type"){
     if(!missedThis)record(false);
     missedThis=true;mode="reveal-retype";
-    fb.textContent="拼错了。看一下正确答案，再完整打一遍。";fb.className="feedback no";
+    const want=tt.split(" "),got=val.split(" ");
+    const shown=got.map((w,i)=>w===want[i]?esc(w):`<u>${esc(w)}</u>`).join(" ");
+    fb.innerHTML=`拼错了。看一下正确答案，再完整打一遍。<div class="typedwas">你打的是：${shown||"（空）"}</div>`;fb.className="feedback no";
     showAnswer();$("typer").value="";renderSlots();speak(cur.en,true);
   }else{fb.textContent="还不对，照着淡色的字母再打一遍。";fb.className="feedback no"}
   focusTyper();
