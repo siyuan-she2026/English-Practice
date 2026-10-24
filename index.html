@@ -209,7 +209,7 @@ kbd{font-family:var(--f-mono);font-size:.78rem;border:1px solid var(--line);bord
 .talkhead b{font-family:var(--f-display);font-size:1.2rem}
 .chat{display:flex;flex-direction:column;gap:10px;min-height:120px}
 .bubble{max-width:min(85%,560px);padding:10px 14px;border-radius:14px;display:grid;gap:4px}
-.bubble.npc{align-self:flex-start;background:var(--bg);border:1px solid var(--line);border-bottom-left-radius:4px}
+.bubble.npc,.bubble.ai{align-self:flex-start;background:var(--bg);border:1px solid var(--line);border-bottom-left-radius:4px}
 .bubble.me{align-self:flex-end;background:var(--accent-soft);border-bottom-right-radius:4px}
 .bubble .who{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700}
 .bubble .line{display:flex;gap:8px;align-items:flex-start;font-size:1.08rem}
@@ -344,6 +344,15 @@ h3.sub{font-family:var(--f-display);font-size:1.1rem;margin:28px 0 10px}
 .note .nw{font-size:.85rem;color:var(--muted)}
 .note .nw b{color:var(--ink)}
 .note .nt{margin-left:auto;font-size:.8rem;color:var(--muted)}
+.atbox{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:12px;margin-bottom:22px}
+.atfb{align-self:flex-end;max-width:min(85%,560px);font-size:.9rem;background:var(--bg);border:1px dashed var(--line);border-radius:10px;padding:8px 12px;display:grid;gap:3px}
+.atfb .lbl{font-size:.72rem;letter-spacing:.06em;color:var(--ok);font-weight:700}
+.atfb .better{display:flex;gap:8px;align-items:flex-start;color:var(--ink);font-weight:700}
+.atfb .why{color:var(--muted);font-family:"Noto Sans SC",var(--f-body)}
+.atfb.good .lbl{color:var(--ok)}
+.atsum{background:var(--bg);border-radius:12px;padding:14px 16px;display:grid;gap:8px}
+.atsum h4{margin:0;font-family:var(--f-display);font-size:1.05rem}
+.typing{color:var(--muted);font-style:italic}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-weight:700;font-size:.92rem;z-index:20;max-width:calc(100% - 32px);text-align:center}
 .toast.gold{background:var(--flame);color:#fff}
 
@@ -528,7 +537,24 @@ h3.sub{font-family:var(--f-display);font-size:1.1rem;margin:28px 0 10px}
           <button class="chip" data-v="type">自己打出来</button>
         </div>
       </div>
+      <div class="atbox">
+        <div class="schead"><b>AI 自由对话</b><span>AI 扮演英国本地人，你自己打字回答；每句都会提示更地道的说法</span></div>
+        <div class="seg" id="atTopics"></div>
+        <form class="aiform" id="atForm">
+          <input id="atCustom" autocomplete="off" placeholder="或者自己写个话题，比如：聊聊我刚养的猫" aria-label="自定义话题">
+          <button class="btn primary" id="atStart">开始聊</button>
+        </form>
+      </div>
       <div class="scenes" id="scenes"></div>
+    </div>
+    <div id="aiTalk" class="desk" hidden>
+      <div class="talkhead"><button class="btn ghost" id="atBack">← 场景列表</button><b id="atTitle"></b><button class="btn" id="atEnd" style="margin-left:auto">结束并点评</button></div>
+      <div id="atSetup" hidden></div>
+      <div class="chat" id="atChat" aria-live="polite"></div>
+      <form class="aiform" id="atReply">
+        <input id="atIn" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="用英文回答，不会的词可以直接写中文" aria-label="你的回答">
+        <button class="btn primary" id="atSend">发送</button>
+      </form>
     </div>
     <div id="scenePlay" class="desk" hidden>
       <div class="talkhead"><button class="btn ghost" id="talkBack">← 场景列表</button><b id="talkTitle"></b><span class="score" style="margin-left:auto"><span>回合 <b id="talkStep">1/4</b></span><span>失误 <b id="talkMiss">0</b></span></span></div>
@@ -3347,6 +3373,7 @@ $("cSlow").onclick=()=>cz.cur&&speak(cz.cur.text,true);
 const talk={scene:null,turn:0,miss:0,timer:0,tries:0};
 seg("talkModeSeg","talkMode");
 function renderScenes(){
+  if(!$("aiTalk").hidden)return;
   $("sceneList").hidden=!!talk.scene;$("scenePlay").hidden=!talk.scene;
   if(talk.scene)return;
   const card=s=>{
@@ -3362,13 +3389,14 @@ function renderScenes(){
 }
 $("scenes").addEventListener("click",e=>{const b=e.target.closest("[data-scene]");if(b)startScene(b.dataset.scene)});
 $("talkBack").onclick=()=>{clearTimeout(talk.timer);talk.scene=null;try{synth&&synth.cancel()}catch(e){}renderScenes()};
-function bubble(who,en,zh){
+function bubble(who,en,zh,box){
   const b=document.createElement("div");b.className="bubble "+who;
-  b.innerHTML=`<span class="who">${who==="npc"?"对方":"你"}</span>
+  b.innerHTML=`<span class="who">${who==="npc"?"对方":who==="ai"?"本地人（AI）":"你"}</span>
     <div class="line"><button class="say" data-say="${esc(en)}" aria-label="播放">${SPK}</button><span data-ctx="${esc(en)}">${tok(en)}</span></div>
     ${zh?`<button class="trbtn">译</button><span class="tr" hidden>${esc(zh)}</span>`:""}`;
   const tb=b.querySelector(".trbtn");if(tb)tb.onclick=()=>{b.querySelector(".tr").hidden=false;tb.remove()};
-  $("chat").appendChild(b);b.scrollIntoView({block:"nearest",behavior:"smooth"});
+  (box||$("chat")).appendChild(b);b.scrollIntoView({block:"nearest",behavior:"smooth"});
+  return b;
 }
 function startScene(id){
   Object.assign(talk,{scene:SCENES.find(s=>s.id===id),turn:0,miss:0});
@@ -3596,17 +3624,37 @@ function openAI(ctx){
   renderAIMode();
   setTimeout(()=>{try{$("aiIn").focus({preventScroll:true})}catch(e){}},50);
 }
+function aiSetupHTML(btnText){
+  return `<div class="aisetup">
+      <div>在 Claude 里打开这个网站时，可以直接用你的 Claude 账号，不用设置。</div>
+      <div>在你自己的网站上，需要填一个 <b>Anthropic API Key</b>（在 console.anthropic.com 创建，按用量单独计费）。Key 只保存在这台设备的浏览器里，不会上传到任何地方。</div>
+      <input class="aikeyin" type="password" placeholder="sk-ant-..." autocomplete="off" aria-label="Anthropic API Key">
+      <div class="actions"><button class="btn primary aikeysave">${btnText}</button><a class="btn" href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">去创建 Key</a></div></div>`;
+}
+function wireSetup(el,done){
+  const inp=el.querySelector(".aikeyin");
+  el.querySelector(".aikeysave").onclick=()=>{const v=inp.value.trim();if(!v){inp.focus();return}try{localStorage.setItem("vb.aikey",v)}catch(e){}done()};
+}
+// one way to call Claude for the whole page: the viewer's Claude account inside Claude, else their API key
+async function aiCall(turns,opt){
+  opt=opt||{};
+  if(aiSample){
+    if(opt.json)return await aiSample.json(turns,{signal:opt.signal,cache:false});
+    const r=await aiSample(turns,{signal:opt.signal,cache:false,onText:opt.onText});return r.text;
+  }
+  const text=await askAPI(turns,opt.signal);
+  if(!opt.json)return text;
+  try{return JSON.parse(text)}catch(e){}
+  const m=text.match(/\{[\s\S]*\}/);if(m){try{return JSON.parse(m[0])}catch(e){}}
+  const err=new Error("invalid_json");err.code="invalid_json";err.text=text;throw err;
+}
 function renderAIMode(){
   const ready=!!aiSample||!!aiKey();
   $("aiMain").hidden=!ready;$("aiSetup").hidden=ready;
   $("aiVia").textContent=aiSample?"由 Claude 回答，使用你的 Claude 用量":aiKey()?"使用你的 Anthropic API Key":"";
   if(!ready){
-    $("aiSetup").innerHTML=`<div class="aisetup">
-      <div>在 Claude 里打开这个网站时，可以直接用你的 Claude 账号提问，不用设置。</div>
-      <div>在你自己的网站上，需要填一个 <b>Anthropic API Key</b>（在 console.anthropic.com 创建，按用量单独计费）。Key 只保存在这台设备的浏览器里，不会上传到任何地方。</div>
-      <input id="aiKeyIn" type="password" placeholder="sk-ant-..." autocomplete="off" aria-label="Anthropic API Key">
-      <div class="actions"><button class="btn primary" id="aiKeySave">保存并开始提问</button><a class="btn" href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">去创建 Key</a></div></div>`;
-    $("aiKeySave").onclick=()=>{const v=$("aiKeyIn").value.trim();if(!v){$("aiKeyIn").focus();return}try{localStorage.setItem("vb.aikey",v)}catch(e){}renderAIMode()};
+    $("aiSetup").innerHTML=aiSetupHTML("保存并开始提问");
+    wireSetup($("aiSetup"),renderAIMode);
   }
 }
 const AI_RULES="你是一位耐心、讲得清楚的英语老师。学生母语是中文，英语大约雅思 6.5，住在英国，想和本地人自然地闲聊。请用简体中文回答，具体、直接，一般不超过 200 字；需要时给 1 到 2 个英文对比例句并附中文。只回答和这句英语有关的问题。可以用 **加粗** 和以“- ”开头的列表，不要用标题。\n\n学生正在学的材料：\n";
@@ -3619,6 +3667,7 @@ async function askAPI(turns,signal){
 function aiErrText(e){
   const c=e&&e.code;
   if(c==="not_granted"||c==="sampling_disabled"||c==="not_declared")return "没有权限使用 Claude。可以在这个页面的权限设置里允许它使用 Claude。";
+  if(c==="invalid_json")return "AI 的回复格式没对上，再发一次试试。";
   if(c==="rate_limited")return "问得太频繁了，或者用量到了上限，过一会儿再试。";
   if(c==="session_expired")return "登录过期了，请重新登录 Claude。";
   if(e&&e.status===401)return "API Key 不对，请检查后重新填写。";
@@ -3674,6 +3723,126 @@ $("dAsk").onclick=()=>{
   const {word,ctx,local,net}=dictState;
   if(local.exact&&(!ctx||ctx===local.exact.ex||ctx===local.exact.en))openAI(aiCtxFromItem(local.exact));
   else openAI({sentence:ctx||word,zh:"",word:local.exact?local.exact.en:(net&&net.word)||word,wordZh:local.exact?local.exact.zh:(net&&net.zh)||""});
+};
+
+/* ================= AI free conversation ================= */
+const AT_TOPICS=[
+ ["天气闲聊","weather","your neighbour, a chatty retired woman who loves her garden"],
+ ["周末计划","weekend plans","a friendly colleague on a Friday afternoon"],
+ ["在英国生活的感受","what it's like living in the UK","a friendly local you've just met at the pub"],
+ ["工作和职业","work and careers","someone you've just met at a friend's party"],
+ ["美食和做饭","food and cooking","a friend who loves cooking"],
+ ["旅行和度假","travel and holidays","a colleague who has just come back from holiday"],
+ ["足球和体育","football and sport","a regular at your local pub who supports a local team"],
+ ["看剧和电影","TV shows and films","your flatmate"]
+];
+const at={topic:null,turns:[],busy:false,ctl:null,log:[]};
+let atPick=0;
+function renderTopics(){
+  $("atTopics").innerHTML=AT_TOPICS.map((t,i)=>`<button type="button" class="chip" data-at="${i}" aria-pressed="${i===atPick}">${esc(t[0])}</button>`).join("");
+}
+renderTopics();
+$("atTopics").addEventListener("click",e=>{const b=e.target.closest("[data-at]");if(b){atPick=+b.dataset.at;$("atCustom").value="";renderTopics()}});
+$("atForm").onsubmit=e=>{
+  e.preventDefault();
+  const c=$("atCustom").value.trim();
+  const t=c?[c,c,"a friendly local"]:AT_TOPICS[atPick];
+  startAT({zh:t[0],en:t[1],role:t[2]});
+};
+function atRules(t){
+  return "你在帮一位住在英国、母语是中文、英语大约雅思 6.5 的学习者练习日常闲聊。\n"
+   +"请扮演："+t.role+"。话题："+t.en+"（学习者选的话题：「"+t.zh+"」）。\n"
+   +"要求：\n- 用自然、口语化的英式英语，像真人聊天，每次只说 1 到 3 句，常在结尾问一个问题让对话继续；用词别太难。\n"
+   +"- 学习者有时会夹着中文词，那表示不会用英文说，请在 feedback 里给出英文说法。\n"
+   +"- 每次只回复一个 JSON 对象，不要任何其他文字，格式：{\"reply\":\"你说的英文\",\"reply_zh\":\"这句的中文翻译\",\"feedback\":{\"better\":\"学习者上一句如果有语法错误或不够地道，给出更自然的完整说法；已经很好就填空字符串\",\"note\":\"用中文简短说明原因，不超过 40 字；没有问题就填空字符串\"}}\n"
+   +"现在由你先开口，自然地开启这个话题。这一轮没有学习者的话，feedback 两项都填空字符串。";
+}
+function atView(on){
+  $("sceneList").hidden=on;$("aiTalk").hidden=!on;$("scenePlay").hidden=true;
+}
+function startAT(t){
+  at.ctl&&at.ctl.abort();
+  Object.assign(at,{topic:t,turns:[],busy:false,log:[]});
+  $("atTitle").textContent="AI 自由对话 · "+t.zh;
+  $("atChat").innerHTML="";$("atIn").value="";
+  atView(true);
+  if(!aiSample&&!aiKey()){
+    $("atSetup").hidden=false;$("atReply").hidden=true;$("atEnd").hidden=true;
+    $("atSetup").innerHTML=aiSetupHTML("保存并开始聊");
+    wireSetup($("atSetup"),()=>startAT(t));
+    return;
+  }
+  $("atSetup").hidden=true;$("atReply").hidden=false;$("atEnd").hidden=false;
+  atSend(null);
+}
+async function atSend(text){
+  if(at.busy)return;
+  at.busy=true;$("atSend").disabled=true;$("atEnd").disabled=true;
+  let userB=null;
+  if(text!==null){
+    userB=bubble("me",text,"",$("atChat"));
+    at.turns.push({role:"user",content:text});at.log.push(["learner",text]);
+  }else at.turns=[{role:"user",content:atRules(at.topic)}];
+  const wait=document.createElement("div");wait.className="bubble ai typing";wait.textContent="对方正在输入…";$("atChat").appendChild(wait);
+  wait.scrollIntoView({block:"nearest",behavior:"smooth"});
+  at.ctl=new AbortController();
+  try{
+    const j=await aiCall(at.turns,{json:true,signal:at.ctl.signal});
+    wait.remove();
+    const reply=String(j&&j.reply||"").trim();
+    if(!reply)throw {code:"invalid_json"};
+    const fb=j.feedback||{};
+    if(userB)atFeedback(userB,String(fb.better||"").trim(),String(fb.note||"").trim());
+    at.turns.push({role:"assistant",content:JSON.stringify(j)});at.log.push(["local",reply]);
+    bubble("ai",reply,String(j.reply_zh||""),$("atChat"));
+    speak(reply,false,{pitch:1.1});
+  }catch(e){
+    wait.remove();
+    if(text!==null){at.turns.pop();at.log.pop()}
+    if(!(e&&(e.code==="cancelled"||e.name==="AbortError"))){
+      const er=document.createElement("div");er.className="aia";er.innerHTML=`<span class="err">${esc(aiErrText(e))}</span>`;$("atChat").appendChild(er);
+      if(text!==null){$("atIn").value=text;userB&&userB.remove()}
+      if(e&&e.status===401){try{localStorage.removeItem("vb.aikey")}catch(err){}}
+    }
+  }finally{
+    at.busy=false;$("atSend").disabled=false;$("atEnd").disabled=false;
+    try{$("atIn").focus({preventScroll:true})}catch(e){}
+  }
+}
+function atFeedback(after,better,note){
+  const f=document.createElement("div");
+  if(better){
+    f.className="atfb";
+    f.innerHTML=`<span class="lbl">更地道的说法</span><div class="better"><button class="say" data-say="${esc(better)}" aria-label="播放">${SPK}</button><span data-ctx="${esc(better)}">${tok(better)}</span></div>${note?`<span class="why">${esc(note)}</span>`:""}`;
+  }else{f.className="atfb good";f.innerHTML=`<span class="lbl">说得很自然 ✓</span>`}
+  after.after(f);
+}
+$("atReply").onsubmit=e=>{e.preventDefault();const v=$("atIn").value.trim();if(!v||at.busy)return;$("atIn").value="";atSend(v)};
+$("atIn").addEventListener("keydown",e=>{if(e.isComposing||e.keyCode===229)e.stopPropagation()});
+$("atBack").onclick=()=>{at.ctl&&at.ctl.abort();atView(false);renderScenes()};
+$("atEnd").onclick=async()=>{
+  if(at.busy)return;
+  if(!at.log.some(l=>l[0]==="learner")){toast("先聊几句再点评吧");return}
+  at.busy=true;$("atEnd").disabled=true;$("atSend").disabled=true;
+  const box=document.createElement("div");box.className="atsum";box.innerHTML=`<h4>对话点评</h4><div class="aia wait">正在点评…</div>`;
+  $("atChat").appendChild(box);box.scrollIntoView({block:"nearest",behavior:"smooth"});
+  const transcript=at.log.map(([w,t])=>(w==="learner"?"学习者：":"本地人：")+t).join("\n");
+  const prompt="下面是一位住在英国、英语大约雅思 6.5 的中文母语学习者，和英国本地人练习闲聊（话题：「"+at.topic.zh+"」）的对话记录。\n\n"+transcript
+   +"\n\n请用简体中文点评，分三部分，用以“- ”开头的列表，可以用 **加粗**，不要用标题：\n1. 一句话总体评价，先说做得好的地方。\n2. 最多 5 处可以说得更地道的地方，格式：原句 → 更好的说法（原因）。\n3. 这个话题里值得记住的 3 个地道表达，英文加中文。";
+  at.ctl=new AbortController();
+  const out=box.querySelector(".aia");
+  try{
+    const text=await aiCall([{role:"user",content:prompt}],{signal:at.ctl.signal,onText:t=>{out.classList.remove("wait");out.innerHTML=md(t.text)}});
+    out.classList.remove("wait");out.innerHTML=md(text);
+    const key="p"+Date.now().toString(36);
+    aiPending[key]={ctx:{sentence:"AI 自由对话："+at.topic.zh,zh:"",word:"",wordZh:""},q:"对话点评",a:text,saved:null};
+    const act=document.createElement("div");act.className="aiact";
+    act.innerHTML=`<button class="star labeled" data-ainote="${key}" aria-pressed="false">${STAR}<span class="sl">收藏这次点评</span></button>`;
+    box.appendChild(act);
+  }catch(e){
+    out.classList.remove("wait");
+    out.innerHTML=(e&&e.code==="cancelled")?"已停止。":`<span class="err">${esc(aiErrText(e))}</span>`;
+  }finally{at.busy=false;$("atEnd").disabled=false;$("atSend").disabled=false}
 };
 
 /* ================= day picker ================= */
