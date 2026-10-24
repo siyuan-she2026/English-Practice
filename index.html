@@ -353,6 +353,14 @@ h3.sub{font-family:var(--f-display);font-size:1.1rem;margin:28px 0 10px}
 .atsum{background:var(--bg);border-radius:12px;padding:14px 16px;display:grid;gap:8px}
 .atsum h4{margin:0;font-family:var(--f-display);font-size:1.05rem}
 .typing{color:var(--muted);font-style:italic}
+.athead-r{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.savedlist{display:grid;gap:8px}
+.savedlist .lbl{font-size:.8rem;font-weight:700;color:var(--muted);letter-spacing:.04em}
+.saved{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--bg)}
+.saved .info{flex:1;min-width:0;display:grid;gap:2px}
+.saved .info b{font-size:.95rem}
+.saved .info span{font-size:.82rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.resumed{align-self:center;font-size:.8rem;color:var(--muted);border-top:1px dashed var(--line);padding-top:6px;width:100%;text-align:center}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-weight:700;font-size:.92rem;z-index:20;max-width:calc(100% - 32px);text-align:center}
 .toast.gold{background:var(--flame);color:#fff}
 
@@ -544,11 +552,12 @@ h3.sub{font-family:var(--f-display);font-size:1.1rem;margin:28px 0 10px}
           <input id="atCustom" autocomplete="off" placeholder="或者自己写个话题，比如：聊聊我刚养的猫" aria-label="自定义话题">
           <button class="btn primary" id="atStart">开始聊</button>
         </form>
+        <div id="atSaved"></div>
       </div>
       <div class="scenes" id="scenes"></div>
     </div>
     <div id="aiTalk" class="desk" hidden>
-      <div class="talkhead"><button class="btn ghost" id="atBack">← 场景列表</button><b id="atTitle"></b><button class="btn" id="atEnd" style="margin-left:auto">结束并点评</button></div>
+      <div class="talkhead"><button class="btn ghost" id="atBack">← 场景列表</button><b id="atTitle"></b><span class="athead-r"><label class="chip"><input type="checkbox" id="atSave"> 保存这次聊天</label><button class="btn" id="atEnd">结束并点评</button></span></div>
       <div id="atSetup" hidden></div>
       <div class="chat" id="atChat" aria-live="polite"></div>
       <form class="aiform" id="atReply">
@@ -2557,7 +2566,7 @@ const SPK='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/
 
 let custom=store.get("vb.custom",[]);
 let wrong=store.get("vb.wrong",{});
-let settings=Object.assign({accent:"en-GB",rate:0.9,showZh:true,src:"today",goal:70,rainShow:"en",rainSrc:"today",rainSound:true,clozeSrc:"today",talkMode:"pick",lib:"words",day:1,struct:true},store.get("vb.settings",{}));
+let settings=Object.assign({accent:"en-GB",rate:0.9,showZh:true,src:"today",goal:70,rainShow:"en",rainSrc:"today",rainSound:true,clozeSrc:"today",talkMode:"pick",lib:"words",day:1,struct:true,atSave:true},store.get("vb.settings",{}));
 // settings saved by the earlier version used different source names
 if(!["today","todayP","review","fav","mine","wrong"].includes(settings.src))settings.src="today";
 if(!["today","review","fav","mine","wrong"].includes(settings.rainSrc))settings.rainSrc="today";
@@ -3736,7 +3745,55 @@ const AT_TOPICS=[
  ["足球和体育","football and sport","a regular at your local pub who supports a local team"],
  ["看剧和电影","TV shows and films","your flatmate"]
 ];
-const at={topic:null,turns:[],busy:false,ctl:null,log:[]};
+const at={id:null,topic:null,turns:[],busy:false,ctl:null,log:[],view:[]};
+const AT_MAX=20;
+const loadSessions=()=>store.get("vb.atsaved",[]);
+function saveSession(){
+  if(!at.id||!at.view.length)return;
+  const list=loadSessions().filter(x=>x.id!==at.id);
+  list.unshift({id:at.id,t:Date.now(),topic:at.topic,turns:at.turns,log:at.log,view:at.view});
+  store.set("vb.atsaved",list.slice(0,AT_MAX));
+}
+function deleteSession(id){store.set("vb.atsaved",loadSessions().filter(x=>x.id!==id))}
+function renderSaved(){
+  const list=loadSessions();
+  if(!list.length){$("atSaved").innerHTML="";return}
+  $("atSaved").innerHTML=`<div class="savedlist"><span class="lbl">接着上次聊</span>${list.map(x=>{
+    const d=new Date(x.t),rounds=x.view.filter(v=>v.w==="me").length;
+    const last=x.view.length?x.view[x.view.length-1].en:"";
+    return `<div class="saved"><div class="info"><b>${esc(x.topic.zh)}</b><span>${(d.getMonth()+1)}月${d.getDate()}日 · 聊了 ${rounds} 轮 · ${esc(last)}</span></div><button type="button" class="btn primary" data-resume="${x.id}">继续</button><button type="button" class="btn ghost" data-delsess="${x.id}">删除</button></div>`;
+  }).join("")}</div>`;
+}
+renderSaved();
+$("atSaved").addEventListener("click",e=>{
+  const r=e.target.closest("[data-resume]");if(r){resumeAT(r.dataset.resume);return}
+  const d=e.target.closest("[data-delsess]");
+  if(d){
+    if(d.dataset.armed){deleteSession(d.dataset.delsess);renderSaved();toast("已删除这次聊天")}
+    else{d.dataset.armed="1";d.textContent="确认删除";setTimeout(()=>{if(d.isConnected){delete d.dataset.armed;d.textContent="删除"}},3000)}
+  }
+});
+function resumeAT(id){
+  const x=loadSessions().find(v=>v.id===id);if(!x)return;
+  at.ctl&&at.ctl.abort();
+  Object.assign(at,{id:x.id,topic:x.topic,turns:x.turns,log:x.log,view:x.view,busy:false});
+  $("atTitle").textContent="AI 自由对话 · "+x.topic.zh;
+  $("atChat").innerHTML="";$("atIn").value="";
+  $("atSave").checked=true;
+  atView(true);
+  if(!aiSample&&!aiKey()){
+    $("atSetup").hidden=false;$("atReply").hidden=true;$("atEnd").hidden=true;
+    $("atSetup").innerHTML=aiSetupHTML("保存并接着聊");
+    wireSetup($("atSetup"),()=>resumeAT(id));
+  }else{$("atSetup").hidden=true;$("atReply").hidden=false;$("atEnd").hidden=false}
+  for(const v of at.view){
+    const b=bubble(v.w,v.en,v.zh||"",$("atChat"));
+    if(v.w==="me"&&v.fb)atFeedback(b,v.fb.better||"",v.fb.note||"");
+  }
+  const n=document.createElement("div");n.className="resumed";n.textContent="接着上次的聊天，直接回复就行";$("atChat").appendChild(n);
+  n.scrollIntoView({block:"nearest"});
+  try{$("atIn").focus({preventScroll:true})}catch(e){}
+}
 let atPick=0;
 function renderTopics(){
   $("atTopics").innerHTML=AT_TOPICS.map((t,i)=>`<button type="button" class="chip" data-at="${i}" aria-pressed="${i===atPick}">${esc(t[0])}</button>`).join("");
@@ -3762,7 +3819,8 @@ function atView(on){
 }
 function startAT(t){
   at.ctl&&at.ctl.abort();
-  Object.assign(at,{topic:t,turns:[],busy:false,log:[]});
+  Object.assign(at,{id:"s"+Date.now().toString(36),topic:t,turns:[],busy:false,log:[],view:[]});
+  $("atSave").checked=!!settings.atSave;
   $("atTitle").textContent="AI 自由对话 · "+t.zh;
   $("atChat").innerHTML="";$("atIn").value="";
   atView(true);
@@ -3792,9 +3850,12 @@ async function atSend(text){
     const reply=String(j&&j.reply||"").trim();
     if(!reply)throw {code:"invalid_json"};
     const fb=j.feedback||{};
-    if(userB)atFeedback(userB,String(fb.better||"").trim(),String(fb.note||"").trim());
+    const better=String(fb.better||"").trim(),note=String(fb.note||"").trim();
+    if(userB){atFeedback(userB,better,note);at.view.push({w:"me",en:text,fb:{better,note}})}
     at.turns.push({role:"assistant",content:JSON.stringify(j)});at.log.push(["local",reply]);
     bubble("ai",reply,String(j.reply_zh||""),$("atChat"));
+    at.view.push({w:"ai",en:reply,zh:String(j.reply_zh||"")});
+    if($("atSave").checked)saveSession();
     speak(reply,false,{pitch:1.1});
   }catch(e){
     wait.remove();
@@ -3817,9 +3878,14 @@ function atFeedback(after,better,note){
   }else{f.className="atfb good";f.innerHTML=`<span class="lbl">说得很自然 ✓</span>`}
   after.after(f);
 }
+$("atSave").onchange=e=>{
+  settings.atSave=e.target.checked;saveSettings();
+  if(e.target.checked){if(at.view.length){saveSession();toast("已保存，下次可以在「接着上次聊」里继续")}else toast("会自动保存这次聊天")}
+  else{deleteSession(at.id);toast("不再保存这次聊天")}
+};
 $("atReply").onsubmit=e=>{e.preventDefault();const v=$("atIn").value.trim();if(!v||at.busy)return;$("atIn").value="";atSend(v)};
 $("atIn").addEventListener("keydown",e=>{if(e.isComposing||e.keyCode===229)e.stopPropagation()});
-$("atBack").onclick=()=>{at.ctl&&at.ctl.abort();atView(false);renderScenes()};
+$("atBack").onclick=()=>{at.ctl&&at.ctl.abort();atView(false);renderSaved();renderScenes()};
 $("atEnd").onclick=async()=>{
   if(at.busy)return;
   if(!at.log.some(l=>l[0]==="learner")){toast("先聊几句再点评吧");return}
